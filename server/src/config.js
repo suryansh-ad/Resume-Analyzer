@@ -17,6 +17,8 @@ export const config = {
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   clientUrls: (
     process.env.CLIENT_URLS ||
+     "https://resume-analyzer-server-production.up.railway.app/" ||
+     "https://resume-analyzer-server-production.up.railway.app" ||
     process.env.CLIENT_URL ||
     "http://localhost:5173"
   )
