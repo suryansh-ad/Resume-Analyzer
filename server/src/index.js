@@ -10,25 +10,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, "../../client/dist");
 
-const allowedOrigins = config.clientUrls;
-const apiCors = cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-      return;
-    }
-
-    callback(new Error("Request origin is not allowed by CORS."));
-  },
-});
-
 app.use(express.json({ limit: "5mb" }));
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.use("/api", apiCors);
+app.use("/api", cors({ origin: true }));
 app.use("/api/resume", resumeRoutes);
 
 app.use(express.static(clientDistPath));
