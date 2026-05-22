@@ -6,19 +6,15 @@
 
 @layer base {
   :root {
-    color-scheme: light;
-  }
-
-  .dark {
     color-scheme: dark;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50;
+    @apply bg-slate-950 text-slate-50 transition-colors duration-300;
   }
 
   * {
-    @apply border-slate-200 dark:border-slate-800;
+    @apply border-slate-800;
   }
 }
 
@@ -31,4 +27,3 @@
     @apply text-2xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-3xl;
   }
 }
-

@@ -3,9 +3,11 @@ import { Hero } from "./components/Hero";
 import { Navbar } from "./components/Navbar";
 import { UploadPanel } from "./components/UploadPanel";
 import { api } from "./lib/api";
-import { getLatestAnalysis, getStoredTheme, saveLatestAnalysis, setStoredTheme } from "./lib/storage";
+import { getLatestAnalysis, saveLatestAnalysis } from "./lib/storage";
 import { AnalysisDashboard } from "./components/AnalysisDashboard";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { AboutPage } from "./components/AboutPage";
+import { Footer } from "./components/Footer";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = [
@@ -13,8 +15,11 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
+function getCurrentPage() {
+  return window.location.hash === "#about" ? "about" : "home";
+}
+
 function App() {
-  const [darkMode, setDarkMode] = useState(getStoredTheme() === "dark");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [progress, setProgress] = useState(0);
@@ -22,11 +27,24 @@ function App() {
   const [error, setError] = useState("");
   const [record, setRecord] = useState(getLatestAnalysis());
   const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(getCurrentPage);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-    setStoredTheme(darkMode ? "dark" : "light");
-  }, [darkMode]);
+    document.documentElement.classList.add("dark");
+  }, []);
+
+  useEffect(() => {
+    function handleHashChange() {
+      setPage(getCurrentPage());
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  useEffect(() => {
+    document.title = page === "about" ? "About Fresherr" : "Fresherr";
+  }, [page]);
 
   function validateFile(selectedFile) {
     if (!ALLOWED_TYPES.includes(selectedFile.type)) {
@@ -112,30 +130,37 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.08),transparent_30%),linear-gradient(to_bottom,rgba(255,255,255,0.4),transparent)] dark:bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
-      <Navbar darkMode={darkMode} onToggleTheme={() => setDarkMode((value) => !value)} />
-      <Hero />
-
-      <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <UploadPanel
-          file={file}
-          previewUrl={previewUrl}
-          progress={progress}
-          loading={loading}
-          error={error}
-          onFileSelect={handleFileSelect}
-          onRemove={handleRemoveFile}
-          onAnalyze={handleAnalyze}
-        />
-      </main>
-
-      {loading ? (
-        <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-          <LoadingSkeleton />
-        </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
+      <Navbar />
+      {page === "about" ? (
+        <AboutPage />
       ) : (
-        <AnalysisDashboard record={record} keyword={keyword} onKeywordChange={setKeyword} />
+        <>
+          <Hero />
+
+          <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+            <UploadPanel
+              file={file}
+              previewUrl={previewUrl}
+              progress={progress}
+              loading={loading}
+              error={error}
+              onFileSelect={handleFileSelect}
+              onRemove={handleRemoveFile}
+              onAnalyze={handleAnalyze}
+            />
+          </main>
+
+          {loading ? (
+            <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+              <LoadingSkeleton />
+            </div>
+          ) : (
+            <AnalysisDashboard record={record} keyword={keyword} onKeywordChange={setKeyword} />
+          )}
+        </>
       )}
+      <Footer />
     </div>
   );
 }
