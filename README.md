@@ -5,7 +5,7 @@ Modern full-stack AI resume analyzer built with React, Tailwind CSS, Node.js, an
 ## Run locally
 
 1. Copy `.env.example` to `.env`
-2. Add your Gemini API key
+2. Add your Gemini API key 
 3. Install dependencies with `npm install`
 4. Start both apps with `npm run dev`
 
