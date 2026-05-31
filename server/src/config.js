@@ -14,6 +14,14 @@ export const config = {
   geminiModel: process.env.GEMINI_MODEL || "gemini-2.5-flash",
   openaiApiKey: process.env.OPENAI_API_KEY || "",
   openaiModel: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+  openrouterApiKey: process.env.OPENROUTER_API_KEY || process.env.ROUTER || "",
+  openrouterModels: (
+    process.env.OPENROUTER_MODELS ||
+    "deepseek/deepseek-v4-flash:free,poolside/laguna-m.1:free,openai/gpt-oss-120b:free"
+  )
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean),
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   clientUrls: (
     process.env.CLIENT_URLS ||

@@ -47,6 +47,18 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function joinValues(value) {
+  if (Array.isArray(value)) {
+    return value.join(" ");
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return "";
+}
+
 export function calculateAtsScore(resumeText, analysis = {}) {
   const text = resumeText || "";
   const normalized = text.toLowerCase();
@@ -100,7 +112,7 @@ export function calculateAtsScore(resumeText, analysis = {}) {
 
   const recommendations = [];
   if (!linkedinFound) recommendations.push("Add a LinkedIn profile to improve recruiter trust and searchability.");
-  if (!githubFound && /(developer|engineer|software|frontend|backend|full stack)/i.test(analysis.jobRoles?.join(" ") || text)) {
+  if (!githubFound && /(developer|engineer|software|frontend|backend|full stack)/i.test(joinValues(analysis.jobRoles) || text)) {
     recommendations.push("Add a GitHub or portfolio link to strengthen technical credibility.");
   }
   if (quantifiedCount < 2) recommendations.push("Add measurable outcomes like percentages, scale, or impact metrics.");
@@ -113,4 +125,3 @@ export function calculateAtsScore(resumeText, analysis = {}) {
     recommendations,
   };
 }
-

@@ -36,6 +36,17 @@ app.use((error, _req, res, _next) => {
   res.status(status).json({ message });
 });
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   console.log(`Resume analyzer server running on port ${config.port}`);
+});
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(
+      `Port ${config.port} is already in use. Stop the existing backend process or set PORT to a different value.`
+    );
+    process.exit(1);
+  }
+
+  throw error;
 });
