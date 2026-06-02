@@ -32,6 +32,8 @@ Required JSON schema:
 Resume text:
 `;
 
+const AI_REQUEST_TIMEOUT_MS = 12000;
+
 function sanitizeJsonResponse(rawText) {
   const cleaned = rawText
     .replace(/```json/gi, "")
@@ -60,6 +62,28 @@ function getOpenAiText(payload) {
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(url, options, timeoutMs = AI_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function describeError(error) {
+  if (error?.name === "AbortError") {
+    return "request timed out";
+  }
+
+  return error?.message || "unknown error";
 }
 
 function toArray(value) {
@@ -143,6 +167,18 @@ function buildLocalAnalysis(resumeText) {
   };
 }
 
+function buildDefaultSummary(analysis, ats) {
+  const skills = toArray(analysis.skills || analysis.technicalSkills);
+
+  if (skills.length) {
+    return `Resume extracted successfully. Key detected skills include ${skills
+      .slice(0, 5)
+      .join(", ")}. ATS score is ${ats.score}/100.`;
+  }
+
+  return `Resume extracted successfully. ATS score is ${ats.score}/100. Review the suggestions to improve formatting, keywords, and role alignment.`;
+}
+
 async function analyzeWithOpenAi(resumeText) {
   const payload = {
     model: config.openaiModel,
@@ -165,25 +201,29 @@ async function analyzeWithOpenAi(resumeText) {
   let lastError;
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.openaiApiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.openaiApiKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      return getOpenAiText(data);
-    }
+      if (response.ok) {
+        const data = await response.json();
+        return getOpenAiText(data);
+      }
 
-    const errorText = await response.text();
-    lastError = new Error(`OpenAI request failed (${response.status}): ${errorText}`);
+      const errorText = await response.text();
+      lastError = new Error(`OpenAI request failed (${response.status}): ${errorText}`);
 
-    if (response.status < 500 && response.status !== 429) {
-      throw lastError;
+      if (response.status < 500 && response.status !== 429) {
+        throw lastError;
+      }
+    } catch (error) {
+      lastError = error;
     }
 
     if (attempt < 3) {
@@ -216,28 +256,32 @@ async function analyzeWithOpenRouter(resumeText, model) {
   let lastError;
 
   for (let attempt = 1; attempt <= 2; attempt += 1) {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.openrouterApiKey}`,
-        "X-Title": "Resume Analyzer",
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.openrouterApiKey}`,
+          "X-Title": "Resume Analyzer",
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      return getOpenAiText(data);
-    }
+      if (response.ok) {
+        const data = await response.json();
+        return getOpenAiText(data);
+      }
 
-    const errorText = await response.text();
-    lastError = new Error(
-      `OpenRouter model ${model} failed (${response.status}): ${errorText}`
-    );
+      const errorText = await response.text();
+      lastError = new Error(
+        `OpenRouter model ${model} failed (${response.status}): ${errorText}`
+      );
 
-    if (response.status < 500 && response.status !== 429) {
-      throw lastError;
+      if (response.status < 500 && response.status !== 429) {
+        throw lastError;
+      }
+    } catch (error) {
+      lastError = error;
     }
 
     if (attempt < 2) {
@@ -251,9 +295,28 @@ async function analyzeWithOpenRouter(resumeText, model) {
 async function analyzeWithGemini(resumeText) {
   const client = new GoogleGenerativeAI(config.geminiApiKey);
   const model = client.getGenerativeModel({ model: config.geminiModel });
-  const result = await model.generateContent(`${promptTemplate}\n${resumeText}`);
-  const response = await result.response;
-  return response.text();
+  let lastError;
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const result = await Promise.race([
+        model.generateContent(`${promptTemplate}\n${resumeText}`),
+        wait(AI_REQUEST_TIMEOUT_MS).then(() => {
+          throw new Error("Gemini request timed out");
+        }),
+      ]);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < 2) {
+      await wait(600 * attempt);
+    }
+  }
+
+  throw lastError;
 }
 
 function buildAnalysis(rawText, resumeText) {
@@ -265,11 +328,16 @@ function buildAnalysis(rawText, resumeText) {
   };
   const ats = calculateAtsScore(resumeText, normalized);
   const suggestions = [...toArray(parsed.suggestions), ...ats.recommendations];
+  const parsedAnalysis = {
+    ...parsed,
+    skills: toArray(parsed.skills),
+    technicalSkills: toArray(parsed.technicalSkills),
+  };
 
   return {
     name: toText(parsed.name),
-    skills: toArray(parsed.skills),
-    technicalSkills: toArray(parsed.technicalSkills),
+    skills: parsedAnalysis.skills,
+    technicalSkills: parsedAnalysis.technicalSkills,
     softSkills: toArray(parsed.softSkills),
     experience: toText(parsed.experience),
     education: toText(parsed.education),
@@ -286,21 +354,12 @@ function buildAnalysis(rawText, resumeText) {
     ),
     recommendedLearning: toArray(parsed.recommendedLearning),
     jobRoles: toArray(parsed.jobRoles),
-    summary: toText(parsed.summary),
+    summary: toText(parsed.summary) || buildDefaultSummary(parsedAnalysis, ats),
   };
 }
 
 function getAnalysisAttempts() {
   const attempts = [];
-
-  if (config.openrouterApiKey) {
-    config.openrouterModels.forEach((model) => {
-      attempts.push({
-        name: `OpenRouter (${model})`,
-        analyze: (resumeText) => analyzeWithOpenRouter(resumeText, model),
-      });
-    });
-  }
 
   if (config.openaiApiKey) {
     attempts.push({
@@ -316,6 +375,15 @@ function getAnalysisAttempts() {
     });
   }
 
+  if (config.openrouterApiKey) {
+    config.openrouterModels.forEach((model) => {
+      attempts.push({
+        name: `OpenRouter (${model})`,
+        analyze: (resumeText) => analyzeWithOpenRouter(resumeText, model),
+      });
+    });
+  }
+
   return attempts;
 }
 
@@ -323,9 +391,8 @@ export async function analyzeResumeText(resumeText) {
   const attempts = getAnalysisAttempts();
 
   if (!attempts.length) {
-    throw new Error(
-      "Missing AI API key. Add OPENROUTER_API_KEY, ROUTER, OPENAI_API_KEY, or GEMINI_API_KEY to your environment."
-    );
+    console.warn("No AI API keys configured. Falling back to local analysis.");
+    return buildLocalAnalysis(resumeText);
   }
 
   const errors = [];
@@ -335,7 +402,7 @@ export async function analyzeResumeText(resumeText) {
       const rawText = await attempt.analyze(resumeText);
       return buildAnalysis(rawText, resumeText);
     } catch (error) {
-      errors.push(`${attempt.name}: ${error.message}`);
+      errors.push(`${attempt.name}: ${describeError(error)}`);
     }
   }
 
