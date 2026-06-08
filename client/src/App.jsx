@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { Hero } from "./components/Hero";
 import { Navbar } from "./components/Navbar";
 import { UploadPanel } from "./components/UploadPanel";
+import { AuthPanel } from "./components/AuthPanel";
 import { api } from "./lib/api";
 import { getLatestAnalysis, saveLatestAnalysis } from "./lib/storage";
 import { AnalysisDashboard } from "./components/AnalysisDashboard";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { AboutPage } from "./components/AboutPage";
 import { Footer } from "./components/Footer";
+import { supabase } from "./lib/supabase";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = [
@@ -19,6 +21,25 @@ function getCurrentPage() {
   return window.location.hash === "#about" ? "about" : "home";
 }
 
+function hasPasswordRecoveryMarker() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return searchParams.get("type") === "recovery" || hashParams.get("type") === "recovery";
+}
+
+function showPasswordRecoveryForm() {
+  setTimeout(() => {
+    window.location.hash = "auth";
+  }, 0);
+}
+
+function cleanPasswordRecoveryUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("type");
+  url.hash = "auth";
+  window.history.replaceState({}, document.title, url.toString());
+}
+
 function App() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -28,6 +49,9 @@ function App() {
   const [record, setRecord] = useState(getLatestAnalysis());
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(getCurrentPage);
+  const [session, setSession] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
@@ -45,6 +69,45 @@ function App() {
   useEffect(() => {
     document.title = page === "about" ? "About Fresherr" : "Fresherr";
   }, [page]);
+
+  useEffect(() => {
+    let active = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) {
+        return;
+      }
+
+      const isPasswordRecovery = hasPasswordRecoveryMarker();
+
+      setSession(data.session);
+      setPasswordRecovery(isPasswordRecovery);
+      setAuthReady(true);
+
+      if (isPasswordRecovery) {
+        showPasswordRecoveryForm();
+        cleanPasswordRecoveryUrl();
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+
+      if (event === "PASSWORD_RECOVERY" || hasPasswordRecoveryMarker()) {
+        setPasswordRecovery(true);
+        showPasswordRecoveryForm();
+        cleanPasswordRecoveryUrl();
+      }
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   function validateFile(selectedFile) {
     if (!ALLOWED_TYPES.includes(selectedFile.type)) {
@@ -87,6 +150,12 @@ function App() {
   }
 
   async function handleAnalyze() {
+    if (!session?.user) {
+      setError("Please sign in before analyzing a resume.");
+      window.location.hash = "auth";
+      return;
+    }
+
     if (!file) {
       setError("Please choose a resume to analyze.");
       return;
@@ -129,14 +198,31 @@ function App() {
     }
   }
 
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setSession(null);
+    setPasswordRecovery(false);
+  }
+
+  const user = session?.user ?? null;
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
-      <Navbar />
+      <Navbar user={user} onSignOut={handleSignOut} />
       {page === "about" ? (
         <AboutPage />
       ) : (
         <>
           <Hero />
+
+          {authReady ? (
+            <AuthPanel
+              user={user}
+              passwordRecovery={passwordRecovery}
+              onPasswordRecoveryComplete={() => setPasswordRecovery(false)}
+              onSignOut={handleSignOut}
+            />
+          ) : null}
 
           <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
             <UploadPanel
@@ -145,6 +231,7 @@ function App() {
               progress={progress}
               loading={loading}
               error={error}
+              isAuthenticated={Boolean(user)}
               onFileSelect={handleFileSelect}
               onRemove={handleRemoveFile}
               onAnalyze={handleAnalyze}

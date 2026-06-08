@@ -1,10 +1,13 @@
 import express from "express";
 import { v4 as uuid } from "uuid";
 import { upload } from "../middleware/upload.js";
+import { requireAuth } from "../middleware/auth.js";
 import { analyzeResumeText } from "../services/aiService.js";
 import { extractTextFromFile } from "../services/extractText.js";
 
 const router = express.Router();
+
+router.use(requireAuth);
 
 router.post("/upload", upload.single("resume"), async (req, res, next) => {
   try {
@@ -46,6 +49,7 @@ router.post("/analyze", async (req, res, next) => {
     const record = {
       id: uuid(),
       createdAt: new Date().toISOString(),
+      userId: req.user.id,
       file,
       analysis,
     };

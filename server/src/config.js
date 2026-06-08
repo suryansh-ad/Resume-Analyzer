@@ -22,6 +22,10 @@ export const config = {
     .split(",")
     .map((model) => model.trim())
     .filter(Boolean),
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "",
+  supabasePublishableKey:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "",
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   clientUrls: (
     process.env.CLIENT_URLS ||

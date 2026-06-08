@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import authRoutes from "./routes/authRoutes.js";
 import resumeRoutes from "./routes/resumeRoutes.js";
 import { config } from "./config.js";
 
@@ -17,6 +18,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api", cors({ origin: true }));
+app.use("/api/auth", authRoutes);
 app.use("/api/resume", resumeRoutes);
 
 app.use(express.static(clientDistPath));
