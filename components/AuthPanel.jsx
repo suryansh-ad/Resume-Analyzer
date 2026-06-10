@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, LoaderCircle, LockKeyhole, LogOut, Mail, UserCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase/client";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,12 +17,10 @@ function getPasswordRecoveryRedirectUrl() {
 }
 
 function getAuthRedirectUrl() {
-  const url = new URL(window.location.origin);
-  url.hash = "auth";
-  return url.toString();
+  return window.location.origin;
 }
 
-export function AuthPanel({ user, passwordRecovery, onPasswordRecoveryComplete, onSignOut }) {
+export function AuthPanel({ user, passwordRecovery, authError, onPasswordRecoveryComplete, onSignOut }) {
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +31,12 @@ export function AuthPanel({ user, passwordRecovery, onPasswordRecoveryComplete, 
 
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
+
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
+    }
+  }, [authError]);
 
   function changeMode(nextMode) {
     setMode(nextMode);

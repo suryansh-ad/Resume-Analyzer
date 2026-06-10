@@ -27,6 +27,22 @@ function hasPasswordRecoveryMarker() {
   return searchParams.get("type") === "recovery" || hashParams.get("type") === "recovery";
 }
 
+function getAuthErrorMessage() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const description = searchParams.get("error_description") || hashParams.get("error_description");
+
+  if (!description) {
+    return "";
+  }
+
+  if (/unable to exchange external code/i.test(description)) {
+    return "Google sign-in could not be completed. Check the Google OAuth provider setup in Supabase, then try again.";
+  }
+
+  return description;
+}
+
 function showPasswordRecoveryForm() {
   setTimeout(() => {
     window.location.hash = "auth";
@@ -36,6 +52,16 @@ function showPasswordRecoveryForm() {
 function cleanPasswordRecoveryUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete("type");
+  url.hash = "auth";
+  window.history.replaceState({}, document.title, url.toString());
+}
+
+function cleanAuthErrorUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("error");
+  url.searchParams.delete("error_code");
+  url.searchParams.delete("error_description");
+  url.searchParams.delete("sb");
   url.hash = "auth";
   window.history.replaceState({}, document.title, url.toString());
 }
@@ -52,6 +78,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [authError, setAuthError] = useState("");
 
   useEffect(() => {
     document.documentElement.classList.add("dark");
@@ -79,14 +106,19 @@ function App() {
       }
 
       const isPasswordRecovery = hasPasswordRecoveryMarker();
+      const nextAuthError = getAuthErrorMessage();
 
       setSession(data.session);
       setPasswordRecovery(isPasswordRecovery);
+      setAuthError(nextAuthError);
       setAuthReady(true);
 
       if (isPasswordRecovery) {
         showPasswordRecoveryForm();
         cleanPasswordRecoveryUrl();
+      } else if (nextAuthError) {
+        showPasswordRecoveryForm();
+        cleanAuthErrorUrl();
       }
     });
 
@@ -219,6 +251,7 @@ function App() {
             <AuthPanel
             user={user}
             passwordRecovery={passwordRecovery}
+            authError={authError}
             onPasswordRecoveryComplete={() => setPasswordRecovery(false)}
             onSignOut={handleSignOut}
             />
