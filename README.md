@@ -1,16 +1,24 @@
-# AI Resume Analyzer
+# Fresherr AI Resume Analyzer
 
-Modern full-stack AI resume analyzer built with React, Tailwind CSS, Node.js, and Express. It supports PDF/DOCX upload, resume text extraction, Gemini-powered analysis, history, comparison mode, and downloadable reports.
+Production Next.js App Router application for Fresherr.in. It provides an AI-powered resume analyzer with ATS score, resume score, resume feedback, keyword analysis, improvement suggestions, and downloadable reports.
 
 ## Run locally
 
 1. Copy `.env.example` to `.env`
-2. Add your Gemini API key 
+2. Add Supabase keys and at least one AI provider key
 3. Install dependencies with `npm install`
-4. Start both apps with `npm run dev`
+4. Start the app with `npm run dev`
 
-## Apps
+## Local App
 
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:5000`
+- Next.js: `http://localhost:3000`
+- API endpoints: `http://localhost:3000/api/*`
+
+## Railway
+
+- Build command: `npm run build`
+- Start command: `npm run start`
+- Node version: `>=20.9.0`
+
+Required environment variables are listed in `.env.example`.
 

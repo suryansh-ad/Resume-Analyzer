@@ -6,13 +6,11 @@
   :root {
     color-scheme: dark;
   }
-  html,
-  body {
-    font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
-  }
+
   body {
     @apply bg-slate-950 text-slate-50 transition-colors duration-300;
   }
+
   * {
     @apply border-slate-800;
   }

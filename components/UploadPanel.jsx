@@ -1,3 +1,5 @@
+"use client";
+
 import { FileText, LoaderCircle, Trash2, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -40,7 +42,9 @@ export function UploadPanel({
           className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950"
         >
           {loading ? (
-            <span className="inline-flex items-center gap-2"><LoaderCircle size={16} className="animate-spin" /> Analyzing...</span>
+            <span className="inline-flex items-center gap-2">
+              <LoaderCircle size={16} className="animate-spin" /> Analyzing...
+            </span>
           ) : (
             isAuthenticated ? "Analyze Resume" : "Sign in to Analyze"
           )}

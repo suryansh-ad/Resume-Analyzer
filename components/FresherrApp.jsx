@@ -1,15 +1,28 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { Hero } from "./components/Hero";
-import { Navbar } from "./components/Navbar";
-import { UploadPanel } from "./components/UploadPanel";
-import { AuthPanel } from "./components/AuthPanel";
-import { api } from "./lib/api";
-import { getLatestAnalysis, saveLatestAnalysis } from "./lib/storage";
-import { AnalysisDashboard } from "./components/AnalysisDashboard";
-import { LoadingSkeleton } from "./components/LoadingSkeleton";
-import { AboutPage } from "./components/AboutPage";
-import { Footer } from "./components/Footer";
-import { supabase } from "./lib/supabase";
+import { AuthPanel } from "./AuthPanel";
+import { Footer } from "./Footer";
+import { Hero } from "./Hero";
+import { LoadingSkeleton } from "./LoadingSkeleton";
+import { Navbar } from "./Navbar";
+import { UploadPanel } from "./UploadPanel";
+import { api } from "../lib/api";
+import { getLatestAnalysis, saveLatestAnalysis } from "../lib/storage";
+import { supabase } from "../lib/supabase/client";
+
+const AnalysisDashboard = dynamic(
+  () => import("./AnalysisDashboard").then((module) => module.AnalysisDashboard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        <LoadingSkeleton />
+      </div>
+    ),
+  }
+);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = [
@@ -17,11 +30,11 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-function getCurrentPage() {
-  return window.location.hash === "#about" ? "about" : "home";
-}
-
 function hasPasswordRecoveryMarker() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
   const searchParams = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
   return searchParams.get("type") === "recovery" || hashParams.get("type") === "recovery";
@@ -40,35 +53,21 @@ function cleanPasswordRecoveryUrl() {
   window.history.replaceState({}, document.title, url.toString());
 }
 
-function App() {
+export function FresherrApp() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [record, setRecord] = useState(getLatestAnalysis());
+  const [record, setRecord] = useState(null);
   const [keyword, setKeyword] = useState("");
-  const [page, setPage] = useState(getCurrentPage);
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
-    document.documentElement.classList.add("dark");
+    setRecord(getLatestAnalysis());
   }, []);
-
-  useEffect(() => {
-    function handleHashChange() {
-      setPage(getCurrentPage());
-    }
-
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
-
-  useEffect(() => {
-    document.title = page === "about" ? "About Fresherr" : "Fresherr";
-  }, [page]);
 
   useEffect(() => {
     let active = true;
@@ -79,7 +78,6 @@ function App() {
       }
 
       const isPasswordRecovery = hasPasswordRecoveryMarker();
-
       setSession(data.session);
       setPasswordRecovery(isPasswordRecovery);
       setAuthReady(true);
@@ -108,6 +106,14 @@ function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   function validateFile(selectedFile) {
     if (!ALLOWED_TYPES.includes(selectedFile.type)) {
@@ -207,48 +213,42 @@ function App() {
   const user = session?.user ?? null;
 
   return (
-    <div className="min-h-screen font-sans bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
       <Navbar user={user} onSignOut={handleSignOut} />
-      {page === "about" ? (
-        <AboutPage />
+      <Hero />
+
+      {authReady ? (
+        <AuthPanel
+          user={user}
+          passwordRecovery={passwordRecovery}
+          onPasswordRecoveryComplete={() => setPasswordRecovery(false)}
+          onSignOut={handleSignOut}
+        />
+      ) : null}
+
+      <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        <UploadPanel
+          file={file}
+          previewUrl={previewUrl}
+          progress={progress}
+          loading={loading}
+          error={error}
+          isAuthenticated={Boolean(user)}
+          onFileSelect={handleFileSelect}
+          onRemove={handleRemoveFile}
+          onAnalyze={handleAnalyze}
+        />
+      </main>
+
+      {loading ? (
+        <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+          <LoadingSkeleton />
+        </div>
       ) : (
-        <>
-          <Hero />
-
-          {authReady ? (
-            <AuthPanel
-            user={user}
-            passwordRecovery={passwordRecovery}
-            onPasswordRecoveryComplete={() => setPasswordRecovery(false)}
-            onSignOut={handleSignOut}
-            />
-          ) : null}
-          <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-            <UploadPanel
-              file={file}
-              previewUrl={previewUrl}
-              progress={progress}
-              loading={loading}
-              error={error}
-              isAuthenticated={Boolean(user)}
-              onFileSelect={handleFileSelect}
-              onRemove={handleRemoveFile}
-              onAnalyze={handleAnalyze}
-            />
-          </main>
-
-          {loading ? (
-            <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-              <LoadingSkeleton />
-            </div>
-          ) : (
-            <AnalysisDashboard record={record} keyword={keyword} onKeywordChange={setKeyword} />
-          )}
-        </>
+        <AnalysisDashboard record={record} keyword={keyword} onKeywordChange={setKeyword} />
       )}
+
       <Footer />
     </div>
   );
 }
-
-export default App;

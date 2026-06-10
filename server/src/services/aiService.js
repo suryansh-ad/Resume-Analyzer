@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { config } from "../config.js";
 import { calculateAtsScore } from "./atsScoring.js";
 
@@ -32,7 +32,57 @@ Required JSON schema:
 Resume text:
 `;
 
-const AI_REQUEST_TIMEOUT_MS = 12000;
+const MIN_AI_TIME_REMAINING_MS = 250;
+
+const analysisResponseFormat = {
+  type: "json_schema",
+  json_schema: {
+    name: "resume_analysis",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        name: { type: "string" },
+        skills: { type: "array", items: { type: "string" } },
+        technicalSkills: { type: "array", items: { type: "string" } },
+        softSkills: { type: "array", items: { type: "string" } },
+        experience: { type: "string" },
+        education: { type: "string" },
+        projects: { type: "array", items: { type: "string" } },
+        certifications: { type: "array", items: { type: "string" } },
+        strengths: { type: "array", items: { type: "string" } },
+        weaknesses: { type: "array", items: { type: "string" } },
+        missingSkills: { type: "array", items: { type: "string" } },
+        resumeScore: { type: "number" },
+        atsScore: { type: "number" },
+        suggestions: { type: "array", items: { type: "string" } },
+        recommendedLearning: { type: "array", items: { type: "string" } },
+        jobRoles: { type: "array", items: { type: "string" } },
+        summary: { type: "string" },
+      },
+      required: [
+        "name",
+        "skills",
+        "technicalSkills",
+        "softSkills",
+        "experience",
+        "education",
+        "projects",
+        "certifications",
+        "strengths",
+        "weaknesses",
+        "missingSkills",
+        "resumeScore",
+        "atsScore",
+        "suggestions",
+        "recommendedLearning",
+        "jobRoles",
+        "summary",
+      ],
+    },
+  },
+};
 
 function sanitizeJsonResponse(rawText) {
   const cleaned = rawText
@@ -50,8 +100,8 @@ function sanitizeJsonResponse(rawText) {
   return cleaned.slice(startIndex, endIndex + 1);
 }
 
-function getOpenAiText(payload) {
-  const messageText = payload?.choices?.[0]?.message?.content?.trim();
+function getChatCompletionText(completion) {
+  const messageText = completion?.choices?.[0]?.message?.content?.trim();
 
   if (!messageText) {
     throw new Error("AI response did not include text output.");
@@ -64,18 +114,28 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchWithTimeout(url, options, timeoutMs = AI_REQUEST_TIMEOUT_MS) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+function getRemainingAiTime(deadlineMs) {
+  return Math.max(0, deadlineMs - Date.now());
+}
 
-  try {
-    return await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeout);
+function getRequestTimeout(deadlineMs) {
+  const remainingMs = getRemainingAiTime(deadlineMs);
+
+  if (remainingMs <= MIN_AI_TIME_REMAINING_MS) {
+    throw new Error("AI time budget exhausted");
   }
+
+  return Math.min(config.aiRequestTimeoutMs, remainingMs);
+}
+
+async function waitForRetry(attempt, deadlineMs) {
+  const remainingMs = getRemainingAiTime(deadlineMs);
+
+  if (remainingMs <= MIN_AI_TIME_REMAINING_MS) {
+    return;
+  }
+
+  await wait(Math.min(600 * attempt, remainingMs));
 }
 
 function describeError(error) {
@@ -179,12 +239,20 @@ function buildDefaultSummary(analysis, ats) {
   return `Resume extracted successfully. ATS score is ${ats.score}/100. Review the suggestions to improve formatting, keywords, and role alignment.`;
 }
 
-async function analyzeWithOpenAi(resumeText) {
+async function analyzeWithChatCompletions(
+  provider,
+  resumeText,
+  maxAttempts = 2,
+  deadlineMs = Date.now() + config.aiTotalBudgetMs
+) {
+  const client = new OpenAI({
+    apiKey: provider.apiKey,
+    ...(provider.baseURL ? { baseURL: provider.baseURL } : {}),
+  });
   const payload = {
-    model: config.openaiModel,
-    response_format: {
-      type: "json_object",
-    },
+    model: provider.model,
+    temperature: 0.2,
+    response_format: analysisResponseFormat,
     messages: [
       {
         role: "system",
@@ -200,119 +268,20 @@ async function analyzeWithOpenAi(resumeText) {
 
   let lastError;
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.openaiApiKey}`,
-        },
-        body: JSON.stringify(payload),
+      const completion = await client.chat.completions.create(payload, {
+        maxRetries: 0,
+        timeout: getRequestTimeout(deadlineMs),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        return getOpenAiText(data);
-      }
-
-      const errorText = await response.text();
-      lastError = new Error(`OpenAI request failed (${response.status}): ${errorText}`);
-
-      if (response.status < 500 && response.status !== 429) {
-        throw lastError;
-      }
+      return getChatCompletionText(completion);
     } catch (error) {
       lastError = error;
     }
 
-    if (attempt < 3) {
-      await wait(600 * attempt);
-    }
-  }
-
-  throw lastError;
-}
-
-async function analyzeWithOpenRouter(resumeText, model) {
-  const payload = {
-    model,
-    response_format: {
-      type: "json_object",
-    },
-    messages: [
-      {
-        role: "system",
-        content:
-          "You analyze resumes and must return only valid JSON matching the requested schema.",
-      },
-      {
-        role: "user",
-        content: `${promptTemplate}\n${resumeText}`,
-      },
-    ],
-  };
-
-  let lastError;
-
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    try {
-      const response = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.openrouterApiKey}`,
-          "X-Title": "Resume Analyzer",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return getOpenAiText(data);
-      }
-
-      const errorText = await response.text();
-      lastError = new Error(
-        `OpenRouter model ${model} failed (${response.status}): ${errorText}`
-      );
-
-      if (response.status < 500 && response.status !== 429) {
-        throw lastError;
-      }
-    } catch (error) {
-      lastError = error;
-    }
-
-    if (attempt < 2) {
-      await wait(600 * attempt);
-    }
-  }
-
-  throw lastError;
-}
-
-async function analyzeWithGemini(resumeText) {
-  const client = new GoogleGenerativeAI(config.geminiApiKey);
-  const model = client.getGenerativeModel({ model: config.geminiModel });
-  let lastError;
-
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    try {
-      const result = await Promise.race([
-        model.generateContent(`${promptTemplate}\n${resumeText}`),
-        wait(AI_REQUEST_TIMEOUT_MS).then(() => {
-          throw new Error("Gemini request timed out");
-        }),
-      ]);
-      const response = await result.response;
-      return response.text();
-    } catch (error) {
-      lastError = error;
-    }
-
-    if (attempt < 2) {
-      await wait(600 * attempt);
+    if (attempt < maxAttempts) {
+      await waitForRetry(attempt, deadlineMs);
     }
   }
 
@@ -361,26 +330,36 @@ function buildAnalysis(rawText, resumeText) {
 function getAnalysisAttempts() {
   const attempts = [];
 
+  if (config.groqApiKey) {
+    attempts.push({
+      name: `Groq (${config.groqModel})`,
+      analyze: (resumeText, deadlineMs) =>
+        analyzeWithChatCompletions(
+          {
+            apiKey: config.groqApiKey,
+            baseURL: "https://api.groq.com/openai/v1",
+            model: config.groqModel,
+          },
+          resumeText,
+          3,
+          deadlineMs
+        ),
+    });
+  }
+
   if (config.openaiApiKey) {
     attempts.push({
       name: `OpenAI (${config.openaiModel})`,
-      analyze: analyzeWithOpenAi,
-    });
-  }
-
-  if (config.geminiApiKey) {
-    attempts.push({
-      name: `Gemini (${config.geminiModel})`,
-      analyze: analyzeWithGemini,
-    });
-  }
-
-  if (config.openrouterApiKey) {
-    config.openrouterModels.forEach((model) => {
-      attempts.push({
-        name: `OpenRouter (${model})`,
-        analyze: (resumeText) => analyzeWithOpenRouter(resumeText, model),
-      });
+      analyze: (resumeText, deadlineMs) =>
+        analyzeWithChatCompletions(
+          {
+            apiKey: config.openaiApiKey,
+            model: config.openaiModel,
+          },
+          resumeText,
+          2,
+          deadlineMs
+        ),
     });
   }
 
@@ -389,6 +368,7 @@ function getAnalysisAttempts() {
 
 export async function analyzeResumeText(resumeText) {
   const attempts = getAnalysisAttempts();
+  const deadlineMs = Date.now() + config.aiTotalBudgetMs;
 
   if (!attempts.length) {
     console.warn("No AI API keys configured. Falling back to local analysis.");
@@ -398,8 +378,13 @@ export async function analyzeResumeText(resumeText) {
   const errors = [];
 
   for (const attempt of attempts) {
+    if (getRemainingAiTime(deadlineMs) <= MIN_AI_TIME_REMAINING_MS) {
+      errors.push("AI time budget exhausted");
+      break;
+    }
+
     try {
-      const rawText = await attempt.analyze(resumeText);
+      const rawText = await attempt.analyze(resumeText, deadlineMs);
       return buildAnalysis(rawText, resumeText);
     } catch (error) {
       errors.push(`${attempt.name}: ${describeError(error)}`);
