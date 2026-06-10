@@ -16,6 +16,12 @@ function getPasswordRecoveryRedirectUrl() {
   return url.toString();
 }
 
+function getAuthRedirectUrl() {
+  const url = new URL(window.location.origin);
+  url.hash = "auth";
+  return url.toString();
+}
+
 export function AuthPanel({ user, passwordRecovery, onPasswordRecoveryComplete, onSignOut }) {
   const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
@@ -109,6 +115,24 @@ export function AuthPanel({ user, passwordRecovery, onPasswordRecoveryComplete, 
 
     setPassword("");
     setLoading(false);
+  }
+
+  async function handleGoogleSignIn() {
+    setLoading(true);
+    setMessage("");
+    setError("");
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: getAuthRedirectUrl(),
+      },
+    });
+
+    if (oauthError) {
+      setError(oauthError.message);
+      setLoading(false);
+    }
   }
 
   async function handlePasswordUpdate(event) {
@@ -252,6 +276,32 @@ export function AuthPanel({ user, passwordRecovery, onPasswordRecoveryComplete, 
               Sign Up
             </button>
           </div>
+
+          {!isReset ? (
+            <>
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="mt-5 inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? (
+                  <LoaderCircle size={16} className="animate-spin" />
+                ) : (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 bg-white text-sm font-bold text-slate-900">
+                    G
+                  </span>
+                )}
+                Continue with Google
+              </button>
+
+              <div className="mt-5 flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-slate-500">
+                <span className="h-px flex-1 bg-white/10" />
+                <span>Email</span>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+            </>
+          ) : null}
 
           <label className="mt-6 block text-sm font-medium text-slate-200" htmlFor="auth-email">
             Email
