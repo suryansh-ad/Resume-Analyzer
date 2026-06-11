@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AuthPanel } from "./AuthPanel";
 import { Footer } from "./Footer";
 import { Hero } from "./Hero";
@@ -120,6 +120,16 @@ function cleanCompletedAuthUrl() {
   }
 }
 
+function logAuthTrace(source, session, extra = {}) {
+  console.info("[fresherr-auth]", source, {
+    event: extra.event,
+    error: extra.error,
+    hasSession: Boolean(session),
+    userEmail: session?.user?.email ?? null,
+    userId: session?.user?.id ?? null,
+  });
+}
+
 export function FresherrApp() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -128,10 +138,11 @@ export function FresherrApp() {
   const [error, setError] = useState("");
   const [record, setRecord] = useState(null);
   const [keyword, setKeyword] = useState("");
-  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [authError, setAuthError] = useState("");
+  const userRef = useRef(null);
 
   useEffect(() => {
     setRecord(getLatestAnalysis());
@@ -139,6 +150,55 @@ export function FresherrApp() {
 
   useEffect(() => {
     let active = true;
+
+    function applySession(nextSession, source, extra = {}) {
+      if (!active) {
+        return;
+      }
+
+      logAuthTrace(source, nextSession, extra);
+      const nextUser = nextSession?.user ?? null;
+
+      if (!nextUser && userRef.current && extra.event !== "SIGNED_OUT") {
+        console.info("[fresherr-auth] ignored null user update", { source, event: extra.event });
+        if (extra.ready) {
+          setAuthReady(true);
+        }
+        return;
+      }
+
+      userRef.current = nextUser;
+      setUser(nextUser);
+
+      if (extra.ready) {
+        setAuthReady(true);
+      }
+
+      if (nextUser) {
+        setAuthError("");
+      }
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      applySession(nextSession, "onAuthStateChange", {
+        event,
+        ready: event !== "INITIAL_SESSION" || Boolean(nextSession),
+      });
+
+      if (event === "PASSWORD_RECOVERY" || hasPasswordRecoveryMarker()) {
+        setPasswordRecovery(true);
+        showPasswordRecoveryForm();
+        cleanPasswordRecoveryUrl();
+      } else if (nextSession?.user) {
+        setPasswordRecovery(false);
+        cleanCompletedAuthUrl();
+      } else if (event === "SIGNED_OUT") {
+        setPasswordRecovery(false);
+        setAuthError("");
+      }
+    });
 
     supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) {
@@ -154,10 +214,9 @@ export function FresherrApp() {
         return searchParams.has(key) || hashParams.has(key);
       });
 
-      setSession(restoredSession);
+      applySession(restoredSession, "getSession", { error: sessionError?.message, ready: true });
       setPasswordRecovery(isPasswordRecovery);
       setAuthError(nextAuthError);
-      setAuthReady(true);
 
       if (isPasswordRecovery) {
         showPasswordRecoveryForm();
@@ -175,32 +234,11 @@ export function FresherrApp() {
         return;
       }
 
-      setSession(null);
+      console.info("[fresherr-auth] getSession failed", { error: sessionError?.message });
+      userRef.current = null;
+      setUser(null);
       setAuthError(sessionError?.message || "Unable to restore your sign-in session.");
       setAuthReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession);
-      setAuthReady(true);
-
-      if (nextSession?.user) {
-        setAuthError("");
-      }
-
-      if (event === "PASSWORD_RECOVERY" || hasPasswordRecoveryMarker()) {
-        setPasswordRecovery(true);
-        showPasswordRecoveryForm();
-        cleanPasswordRecoveryUrl();
-      } else if (nextSession?.user) {
-        setPasswordRecovery(false);
-        cleanCompletedAuthUrl();
-      } else if (event === "SIGNED_OUT") {
-        setPasswordRecovery(false);
-        setAuthError("");
-      }
     });
 
     return () => {
@@ -258,7 +296,7 @@ export function FresherrApp() {
   }
 
   async function handleAnalyze() {
-    if (!session?.user) {
+    if (!user) {
       setError("Please sign in before analyzing a resume.");
       window.location.hash = "auth";
       return;
@@ -308,11 +346,11 @@ export function FresherrApp() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    setSession(null);
+    console.info("[fresherr-auth] user set null", { source: "handleSignOut" });
+    userRef.current = null;
+    setUser(null);
     setPasswordRecovery(false);
   }
-
-  const user = session?.user ?? null;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
