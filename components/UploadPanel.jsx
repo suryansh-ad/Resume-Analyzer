@@ -13,6 +13,7 @@ export function UploadPanel({
   progress,
   loading,
   error,
+  authReady = true,
   isAuthenticated,
   onFileSelect,
   onRemove,
@@ -38,7 +39,7 @@ export function UploadPanel({
         <button
           type="button"
           onClick={onAnalyze}
-          disabled={!file || loading || !isAuthenticated}
+          disabled={!file || loading || !authReady || !isAuthenticated}
           className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-medium text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950"
         >
           {loading ? (
@@ -46,7 +47,7 @@ export function UploadPanel({
               <LoaderCircle size={16} className="animate-spin" /> Analyzing...
             </span>
           ) : (
-            isAuthenticated ? "Analyze Resume" : "Sign in to Analyze"
+            authReady ? (isAuthenticated ? "Analyze Resume" : "Sign in to Analyze") : "Preparing Session..."
           )}
         </button>
       </div>
@@ -133,7 +134,7 @@ export function UploadPanel({
             </div>
           )}
 
-          {!isAuthenticated ? (
+          {authReady && !isAuthenticated ? (
             <p className="mt-4 text-sm text-cyan-700 dark:text-cyan-200">Sign in below before running an analysis.</p>
           ) : null}
           {error ? <p className="mt-4 text-sm text-rose-600 dark:text-rose-300">{error}</p> : null}

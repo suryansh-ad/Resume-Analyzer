@@ -1,6 +1,6 @@
 import { LogOut, UserCircle } from "lucide-react";
 
-export function Navbar({ user, onSignOut }) {
+export function Navbar({ user, authReady = true, onSignOut }) {
   return (
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
@@ -25,7 +25,9 @@ export function Navbar({ user, onSignOut }) {
           <a href="#analyzer" className="hidden text-sm text-slate-300 transition hover:text-white sm:block">
             Analyzer
           </a>
-          {user ? (
+          {!authReady ? (
+            <div aria-hidden="true" className="h-10 w-[76px] rounded-full border border-white/10 bg-white/5" />
+          ) : user ? (
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-2 pr-1">
               <span className="hidden max-w-44 items-center gap-2 truncate text-xs text-slate-300 md:inline-flex">
                 <UserCircle size={16} className="shrink-0" />

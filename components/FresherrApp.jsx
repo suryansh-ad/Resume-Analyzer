@@ -30,6 +30,20 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
+const AUTH_ERROR_PARAMS = ["error", "error_code", "error_description", "sb"];
+const AUTH_SEARCH_PARAMS = ["code", "state", ...AUTH_ERROR_PARAMS];
+const AUTH_HASH_PARAMS = [
+  "access_token",
+  "expires_at",
+  "expires_in",
+  "provider_refresh_token",
+  "provider_token",
+  "refresh_token",
+  "token_type",
+  "type",
+  ...AUTH_ERROR_PARAMS,
+];
+
 function hasPasswordRecoveryMarker() {
   if (typeof window === "undefined") {
     return false;
@@ -53,8 +67,8 @@ function getAuthErrorMessage() {
     return "";
   }
 
-  if (/unable to exchange external code/i.test(description)) {
-    return "Google sign-in could not be completed. Check the Google OAuth provider setup in Supabase, then try again.";
+  if (/unable to exchange external code|google sign-in could not be completed/i.test(description)) {
+    return "";
   }
 
   return description;
@@ -75,12 +89,35 @@ function cleanPasswordRecoveryUrl() {
 
 function cleanAuthErrorUrl() {
   const url = new URL(window.location.href);
-  url.searchParams.delete("error");
-  url.searchParams.delete("error_code");
-  url.searchParams.delete("error_description");
-  url.searchParams.delete("sb");
+  AUTH_ERROR_PARAMS.forEach((key) => url.searchParams.delete(key));
   url.hash = "auth";
   window.history.replaceState({}, document.title, url.toString());
+}
+
+function cleanCompletedAuthUrl() {
+  const url = new URL(window.location.href);
+  let changed = false;
+
+  AUTH_SEARCH_PARAMS.forEach((key) => {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  });
+
+  const hashValue = url.hash.replace(/^#/, "");
+  const hashParams = new URLSearchParams(hashValue);
+  const hasAuthHashParams = AUTH_HASH_PARAMS.some((key) => hashParams.has(key));
+
+  if (hasAuthHashParams) {
+    AUTH_HASH_PARAMS.forEach((key) => hashParams.delete(key));
+    url.hash = hashParams.toString();
+    changed = true;
+  }
+
+  if (changed) {
+    window.history.replaceState({}, document.title, url.toString());
+  }
 }
 
 export function FresherrApp() {
@@ -103,14 +140,21 @@ export function FresherrApp() {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) {
         return;
       }
 
       const isPasswordRecovery = hasPasswordRecoveryMarker();
-      const nextAuthError = getAuthErrorMessage();
-      setSession(data.session);
+      const restoredSession = data?.session ?? null;
+      const nextAuthError = restoredSession ? "" : sessionError?.message || getAuthErrorMessage();
+      const hasAuthErrorParams = AUTH_ERROR_PARAMS.some((key) => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        return searchParams.has(key) || hashParams.has(key);
+      });
+
+      setSession(restoredSession);
       setPasswordRecovery(isPasswordRecovery);
       setAuthError(nextAuthError);
       setAuthReady(true);
@@ -118,10 +162,22 @@ export function FresherrApp() {
       if (isPasswordRecovery) {
         showPasswordRecoveryForm();
         cleanPasswordRecoveryUrl();
+      } else if (restoredSession) {
+        cleanCompletedAuthUrl();
       } else if (nextAuthError) {
         showPasswordRecoveryForm();
         cleanAuthErrorUrl();
+      } else if (hasAuthErrorParams) {
+        cleanAuthErrorUrl();
       }
+    }).catch((sessionError) => {
+      if (!active) {
+        return;
+      }
+
+      setSession(null);
+      setAuthError(sessionError?.message || "Unable to restore your sign-in session.");
+      setAuthReady(true);
     });
 
     const {
@@ -130,10 +186,20 @@ export function FresherrApp() {
       setSession(nextSession);
       setAuthReady(true);
 
+      if (nextSession?.user) {
+        setAuthError("");
+      }
+
       if (event === "PASSWORD_RECOVERY" || hasPasswordRecoveryMarker()) {
         setPasswordRecovery(true);
         showPasswordRecoveryForm();
         cleanPasswordRecoveryUrl();
+      } else if (nextSession?.user) {
+        setPasswordRecovery(false);
+        cleanCompletedAuthUrl();
+      } else if (event === "SIGNED_OUT") {
+        setPasswordRecovery(false);
+        setAuthError("");
       }
     });
 
@@ -250,7 +316,7 @@ export function FresherrApp() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
-      <Navbar user={user} onSignOut={handleSignOut} />
+      <Navbar user={user} authReady={authReady} onSignOut={handleSignOut} />
       <Hero />
 
       {authReady ? (
@@ -270,6 +336,7 @@ export function FresherrApp() {
           progress={progress}
           loading={loading}
           error={error}
+          authReady={authReady}
           isAuthenticated={Boolean(user)}
           onFileSelect={handleFileSelect}
           onRemove={handleRemoveFile}
