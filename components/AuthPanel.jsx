@@ -132,26 +132,17 @@ export function AuthPanel({ user, passwordRecovery, authError, onPasswordRecover
     setMessage("");
     setError("");
 
-    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: getAuthRedirectUrl(),
-        skipBrowserRedirect: true,
       },
     });
 
     if (oauthError) {
       setError(oauthError.message);
       setLoading(false);
-      return;
     }
-
-    if (data?.url) {
-      window.location.assign(data.url);
-      return;
-    }
-
-    setLoading(false);
   }
 
   async function handlePasswordUpdate(event) {
