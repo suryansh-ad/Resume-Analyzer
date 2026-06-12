@@ -30,8 +30,8 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-const AUTH_ERROR_PARAMS = ["error", "error_code", "error_description", "sb"];
-const AUTH_SEARCH_PARAMS = ["code", "state", ...AUTH_ERROR_PARAMS];
+const AUTH_ERROR_PARAMS = ["error", "error_code", "error_description"];
+const AUTH_SEARCH_PARAMS = ["code", "state", "sb", ...AUTH_ERROR_PARAMS];
 const AUTH_HASH_PARAMS = [
   "access_token",
   "expires_at",
@@ -41,6 +41,7 @@ const AUTH_HASH_PARAMS = [
   "refresh_token",
   "token_type",
   "type",
+  "sb",
   ...AUTH_ERROR_PARAMS,
 ];
 
