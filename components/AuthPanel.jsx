@@ -132,6 +132,17 @@ export function AuthPanel({ user, passwordRecovery, authError, onPasswordRecover
     setMessage("");
     setError("");
 
+    if (typeof window !== "undefined") {
+      const sbKeys = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("sb-")) {
+          sbKeys[key] = localStorage.getItem(key);
+        }
+      }
+      console.log("[fresherr-auth] [BEFORE REDIRECT] localStorage sb- keys:", sbKeys);
+    }
+
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

@@ -7,6 +7,11 @@ if (!supabaseUrl || !supabasePublishableKey) {
   throw new Error("Missing Supabase environment variables.");
 }
 
+if (typeof window !== "undefined") {
+  window.__supabase_instances = (window.__supabase_instances || 0) + 1;
+  console.log("[fresherr-auth] Supabase Client Instance Created. Count:", window.__supabase_instances, new Error().stack);
+}
+
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
     autoRefreshToken: true,

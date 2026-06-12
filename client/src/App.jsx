@@ -64,6 +64,7 @@ function showPasswordRecoveryForm() {
 }
 
 function cleanPasswordRecoveryUrl() {
+  console.log("[fresherr-auth] cleanPasswordRecoveryUrl() running");
   const url = new URL(window.location.href);
   url.searchParams.delete("type");
   url.hash = "auth";
@@ -71,6 +72,7 @@ function cleanPasswordRecoveryUrl() {
 }
 
 function cleanAuthErrorUrl() {
+  console.log("[fresherr-auth] cleanAuthErrorUrl() running");
   const url = new URL(window.location.href);
   AUTH_ERROR_PARAMS.forEach((key) => url.searchParams.delete(key));
   url.hash = "auth";
@@ -78,6 +80,7 @@ function cleanAuthErrorUrl() {
 }
 
 function cleanCompletedAuthUrl() {
+  console.log("[fresherr-auth] cleanCompletedAuthUrl() running");
   const url = new URL(window.location.href);
   let changed = false;
 
@@ -103,48 +106,21 @@ function cleanCompletedAuthUrl() {
   }
 }
 
-async function recoverSessionFromCallbackUrl(source) {
-  const url = new URL(window.location.href);
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  const code = url.searchParams.get("code");
-  const accessToken = hashParams.get("access_token");
-  const refreshToken = hashParams.get("refresh_token");
-
-  console.info("[fresherr-auth] callback url check", {
-    source,
-    hasCode: Boolean(code),
-    hasAccessToken: Boolean(accessToken),
-    hasRefreshToken: Boolean(refreshToken),
-  });
-
-  if (accessToken && refreshToken) {
-    const { data, error } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-
-    console.info("[fresherr-auth] setSession from hash", {
-      error: error?.message,
-      hasSession: Boolean(data?.session),
-      userEmail: data?.session?.user?.email ?? null,
-    });
-
-    return data?.session ?? null;
+function isExchangePending() {
+  if (typeof window === "undefined") {
+    return false;
   }
 
-  if (code) {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 
-    console.info("[fresherr-auth] exchangeCodeForSession", {
-      error: error?.message,
-      hasSession: Boolean(data?.session),
-      userEmail: data?.session?.user?.email ?? null,
-    });
+  const hasCode = searchParams.has("code");
+  const hasAccessToken = hashParams.has("access_token");
+  const hasRecovery = searchParams.get("type") === "recovery" || hashParams.get("type") === "recovery";
 
-    return data?.session ?? null;
-  }
+  const hasError = AUTH_ERROR_PARAMS.some((key) => searchParams.has(key) || hashParams.has(key));
 
-  return null;
+  return (hasCode || hasAccessToken || hasRecovery) && !hasError;
 }
 
 function logAuthTrace(source, session, extra = {}) {
@@ -191,6 +167,56 @@ function App() {
 
   useEffect(() => {
     let active = true;
+    let fallbackTimer = null;
+
+    // 1. Wrap window.history.replaceState to log calls
+    if (typeof window !== "undefined" && !window.__replaceStateWrapped) {
+      window.__replaceStateWrapped = true;
+      const originalReplaceState = window.history.replaceState;
+      window.history.replaceState = function (...args) {
+        console.log("[fresherr-auth] window.history.replaceState called with:", args, new Error().stack);
+        return originalReplaceState.apply(this, args);
+      };
+    }
+
+    // 2. Log localStorage sb- keys on load
+    if (typeof window !== "undefined") {
+      const sbKeys = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith("sb-")) {
+          sbKeys[key] = localStorage.getItem(key);
+        }
+      }
+      console.log("[fresherr-auth] [ON LOAD] localStorage sb- keys:", sbKeys);
+    }
+
+    // 3. Define wrappers for setUser, setAuthReady, setAuthError with stack trace logging
+    const loggedSetUser = (val) => {
+      console.log("[fresherr-auth] setUser called with:", val, new Error().stack);
+      userRef.current = val;
+      setUser(val);
+    };
+
+    const loggedSetAuthReady = (val) => {
+      console.log("[fresherr-auth] setAuthReady called with:", val, new Error().stack);
+      setAuthReady(val);
+    };
+
+    const loggedSetAuthError = (val) => {
+      console.log("[fresherr-auth] setAuthError called with:", val, new Error().stack);
+      setAuthError(val);
+    };
+
+    if (isExchangePending()) {
+      console.info("[fresherr-auth] exchange pending, starting safety fallback timer");
+      fallbackTimer = setTimeout(() => {
+        if (active) {
+          console.warn("[fresherr-auth] exchange fallback triggered - setting authReady");
+          loggedSetAuthReady(true);
+        }
+      }, 4000);
+    }
 
     function applySession(nextSession, source, extra = {}) {
       if (!active) {
@@ -203,26 +229,28 @@ function App() {
       if (!nextUser && userRef.current && extra.event !== "SIGNED_OUT") {
         console.info("[fresherr-auth] ignored null user update", { source, event: extra.event });
         if (extra.ready) {
-          setAuthReady(true);
+          if (fallbackTimer) clearTimeout(fallbackTimer);
+          loggedSetAuthReady(true);
         }
         return;
       }
 
-      userRef.current = nextUser;
-      setUser(nextUser);
+      loggedSetUser(nextUser);
 
       if (extra.ready) {
-        setAuthReady(true);
+        if (fallbackTimer) clearTimeout(fallbackTimer);
+        loggedSetAuthReady(true);
       }
 
       if (nextUser) {
-        setAuthError("");
+        loggedSetAuthError("");
       }
     }
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      console.log("[fresherr-auth] AUTH EVENT", event, nextSession);
       applySession(nextSession, "onAuthStateChange", {
         event,
         ready: event !== "INITIAL_SESSION" || Boolean(nextSession),
@@ -237,17 +265,18 @@ function App() {
         cleanCompletedAuthUrl();
       } else if (event === "SIGNED_OUT") {
         setPasswordRecovery(false);
-        setAuthError("");
+        loggedSetAuthError("");
       }
     });
 
-    supabase.auth.getSession().then(async ({ data, error: sessionError }) => {
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (!active) {
         return;
       }
 
+      console.log("[fresherr-auth] GET SESSION", data?.session, sessionError);
       const isPasswordRecovery = hasPasswordRecoveryMarker();
-      const restoredSession = data?.session ?? (await recoverSessionFromCallbackUrl("getSession"));
+      const restoredSession = data?.session;
       const nextAuthError = restoredSession ? "" : sessionError?.message || getAuthErrorMessage();
       const hasAuthErrorParams = AUTH_ERROR_PARAMS.some((key) => {
         const searchParams = new URLSearchParams(window.location.search);
@@ -255,9 +284,11 @@ function App() {
         return searchParams.has(key) || hashParams.has(key);
       });
 
-      applySession(restoredSession, "getSession", { error: sessionError?.message, ready: true });
+      const shouldSetReady = Boolean(restoredSession) || !isExchangePending();
+
+      applySession(restoredSession, "getSession", { error: sessionError?.message, ready: shouldSetReady });
       setPasswordRecovery(isPasswordRecovery);
-      setAuthError(nextAuthError);
+      loggedSetAuthError(nextAuthError);
 
       if (isPasswordRecovery) {
         showPasswordRecoveryForm();
@@ -276,14 +307,15 @@ function App() {
       }
 
       console.info("[fresherr-auth] getSession failed", { error: sessionError?.message });
-      userRef.current = null;
-      setUser(null);
-      setAuthError(sessionError?.message || "Unable to restore your sign-in session.");
-      setAuthReady(true);
+      loggedSetUser(null);
+      loggedSetAuthError(sessionError?.message || "Unable to restore your sign-in session.");
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      loggedSetAuthReady(true);
     });
 
     return () => {
       active = false;
+      if (fallbackTimer) clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, []);
