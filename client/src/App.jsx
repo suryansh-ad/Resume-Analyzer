@@ -182,6 +182,8 @@ function App() {
 
     // 2. Log localStorage sb- keys on load
     if (typeof window !== "undefined") {
+      console.log("[fresherr-auth] [ON LOAD] URL Search:", window.location.search);
+      console.log("[fresherr-auth] [ON LOAD] URL Hash:", window.location.hash);
       const sbKeys = {};
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -286,6 +288,16 @@ function App() {
       });
 
       const shouldSetReady = Boolean(restoredSession) || !isExchangePending();
+
+      console.log("[fresherr-auth] getSession evaluation details:", {
+        restoredSession: Boolean(restoredSession),
+        nextAuthError,
+        hasAuthErrorParams,
+        isExchangePending: isExchangePending(),
+        AUTH_ERROR_PARAMS,
+        searchParams: Array.from(new URLSearchParams(window.location.search).entries()),
+        hashParams: Array.from(new URLSearchParams(window.location.hash.replace(/^#/, "")).entries())
+      });
 
       applySession(restoredSession, "getSession", { error: sessionError?.message, ready: shouldSetReady });
       setPasswordRecovery(isPasswordRecovery);
