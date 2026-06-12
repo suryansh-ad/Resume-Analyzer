@@ -77,93 +77,85 @@ function cleanAuthErrorUrl() {
   window.history.replaceState({}, document.title, url.toString());
 }
 
-// function cleanCompletedAuthUrl() {
-//   const url = new URL(window.location.href);
-//   let changed = false;
+function cleanCompletedAuthUrl() {
+  const url = new URL(window.location.href);
+  let changed = false;
 
-//   AUTH_SEARCH_PARAMS.forEach((key) => {
-//     if (url.searchParams.has(key)) {
-//       url.searchParams.delete(key);
-//       changed = true;
-//     }
-//   });
+  AUTH_SEARCH_PARAMS.forEach((key) => {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  });
 
-//   const hashValue = url.hash.replace(/^#/, "");
-//   const hashParams = new URLSearchParams(hashValue);
-//   const hasAuthHashParams = AUTH_HASH_PARAMS.some((key) => hashParams.has(key));
+  const hashValue = url.hash.replace(/^#/, "");
+  const hashParams = new URLSearchParams(hashValue);
+  const hasAuthHashParams = AUTH_HASH_PARAMS.some((key) => hashParams.has(key));
 
-//   if (hasAuthHashParams) {
-//     AUTH_HASH_PARAMS.forEach((key) => hashParams.delete(key));
-//     url.hash = hashParams.toString();
-//     changed = true;
-//   }
+  if (hasAuthHashParams) {
+    AUTH_HASH_PARAMS.forEach((key) => hashParams.delete(key));
+    url.hash = hashParams.toString();
+    changed = true;
+  }
 
-//   if (changed) {
-//     window.history.replaceState({}, document.title, url.toString());
-//   }
-// }
+  if (changed) {
+    window.history.replaceState({}, document.title, url.toString());
+  }
+}
 
-// async function recoverSessionFromCallbackUrl(source) {
-//   const url = new URL(window.location.href);
-//   const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-//   const code = url.searchParams.get("code");
-//   const accessToken = hashParams.get("access_token");
-//   const refreshToken = hashParams.get("refresh_token");
+async function recoverSessionFromCallbackUrl(source) {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const code = url.searchParams.get("code");
+  const accessToken = hashParams.get("access_token");
+  const refreshToken = hashParams.get("refresh_token");
 
-//   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  console.info("[fresherr-auth] callback url check", {
+    source,
+    hasCode: Boolean(code),
+    hasAccessToken: Boolean(accessToken),
+    hasRefreshToken: Boolean(refreshToken),
+  });
 
-// console.log("exchangeCodeForSession result", {
-//   code,
-//   error,
-//   session: data?.session,
-// });
+  if (accessToken && refreshToken) {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
 
-//   console.info("[fresherr-auth] callback url check", {
-//     source,
-//     hasCode: Boolean(code),
-//     hasAccessToken: Boolean(accessToken),
-//     hasRefreshToken: Boolean(refreshToken),
-//   });
+    console.info("[fresherr-auth] setSession from hash", {
+      error: error?.message,
+      hasSession: Boolean(data?.session),
+      userEmail: data?.session?.user?.email ?? null,
+    });
 
-//   if (accessToken && refreshToken) {
-//     const { data, error } = await supabase.auth.setSession({
-//       access_token: accessToken,
-//       refresh_token: refreshToken,
-//     });
+    return data?.session ?? null;
+  }
 
-//     console.info("[fresherr-auth] setSession from hash", {
-//       error: error?.message,
-//       hasSession: Boolean(data?.session),
-//       userEmail: data?.session?.user?.email ?? null,
-//     });
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-//     return data?.session ?? null;
-//   }
+    console.info("[fresherr-auth] exchangeCodeForSession", {
+      error: error?.message,
+      hasSession: Boolean(data?.session),
+      userEmail: data?.session?.user?.email ?? null,
+    });
 
-//   if (code) {
-//     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    return data?.session ?? null;
+  }
 
-//     console.info("[fresherr-auth] exchangeCodeForSession", {
-//       error: error?.message,
-//       hasSession: Boolean(data?.session),
-//       userEmail: data?.session?.user?.email ?? null,
-//     });
+  return null;
+}
 
-//     return data?.session ?? null;
-//   }
-
-//   return null;
-// }
-
-// function logAuthTrace(source, session, extra = {}) {
-//   console.info("[fresherr-auth]", source, {
-//     event: extra.event,
-//     error: extra.error,
-//     hasSession: Boolean(session),
-//     userEmail: session?.user?.email ?? null,
-//     userId: session?.user?.id ?? null,
-//   });
-// }
+function logAuthTrace(source, session, extra = {}) {
+  console.info("[fresherr-auth]", source, {
+    event: extra.event,
+    error: extra.error,
+    hasSession: Boolean(session),
+    userEmail: session?.user?.email ?? null,
+    userId: session?.user?.id ?? null,
+  });
+}
 
 function App() {
   const [file, setFile] = useState(null);
@@ -197,64 +189,104 @@ function App() {
     document.title = page === "about" ? "About Fresherr" : "Fresherr";
   }, [page]);
 
- useEffect(() => {
-let mounted = true;
+  useEffect(() => {
+    let active = true;
 
-async function initAuth() {
-const {
-data: { session },
-error,
-} = await supabase.auth.getSession();
+    function applySession(nextSession, source, extra = {}) {
+      if (!active) {
+        return;
+      }
 
-```
-console.log("[fresherr-auth] Initial session", session, error);
+      logAuthTrace(source, nextSession, extra);
+      const nextUser = nextSession?.user ?? null;
 
-if (!mounted) return;
+      if (!nextUser && userRef.current && extra.event !== "SIGNED_OUT") {
+        console.info("[fresherr-auth] ignored null user update", { source, event: extra.event });
+        if (extra.ready) {
+          setAuthReady(true);
+        }
+        return;
+      }
 
-setUser(session?.user ?? null);
-setAuthReady(true);
+      userRef.current = nextUser;
+      setUser(nextUser);
 
-if (session?.user) {
-  setAuthError("");
-  setPasswordRecovery(false);
-}
-```
+      if (extra.ready) {
+        setAuthReady(true);
+      }
 
-}
+      if (nextUser) {
+        setAuthError("");
+      }
+    }
 
-initAuth();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      applySession(nextSession, "onAuthStateChange", {
+        event,
+        ready: event !== "INITIAL_SESSION" || Boolean(nextSession),
+      });
 
-const {
-data: { subscription },
-} = supabase.auth.onAuthStateChange((event, session) => {
-console.log("[fresherr-auth]", event, session);
+      if (event === "PASSWORD_RECOVERY" || hasPasswordRecoveryMarker()) {
+        setPasswordRecovery(true);
+        showPasswordRecoveryForm();
+        cleanPasswordRecoveryUrl();
+      } else if (nextSession?.user) {
+        setPasswordRecovery(false);
+        cleanCompletedAuthUrl();
+      } else if (event === "SIGNED_OUT") {
+        setPasswordRecovery(false);
+        setAuthError("");
+      }
+    });
 
-```
-if (!mounted) return;
+    supabase.auth.getSession().then(async ({ data, error: sessionError }) => {
+      if (!active) {
+        return;
+      }
 
-setUser(session?.user ?? null);
+      const isPasswordRecovery = hasPasswordRecoveryMarker();
+      const restoredSession = data?.session ?? (await recoverSessionFromCallbackUrl("getSession"));
+      const nextAuthError = restoredSession ? "" : sessionError?.message || getAuthErrorMessage();
+      const hasAuthErrorParams = AUTH_ERROR_PARAMS.some((key) => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        return searchParams.has(key) || hashParams.has(key);
+      });
 
-if (event === "PASSWORD_RECOVERY") {
-  setPasswordRecovery(true);
-}
+      applySession(restoredSession, "getSession", { error: sessionError?.message, ready: true });
+      setPasswordRecovery(isPasswordRecovery);
+      setAuthError(nextAuthError);
 
-if (event === "SIGNED_OUT") {
-  setPasswordRecovery(false);
-  setAuthError("");
-}
+      if (isPasswordRecovery) {
+        showPasswordRecoveryForm();
+        cleanPasswordRecoveryUrl();
+      } else if (restoredSession) {
+        cleanCompletedAuthUrl();
+      } else if (nextAuthError) {
+        showPasswordRecoveryForm();
+        cleanAuthErrorUrl();
+      } else if (hasAuthErrorParams) {
+        cleanAuthErrorUrl();
+      }
+    }).catch((sessionError) => {
+      if (!active) {
+        return;
+      }
 
-setAuthReady(true);
-```
+      console.info("[fresherr-auth] getSession failed", { error: sessionError?.message });
+      userRef.current = null;
+      setUser(null);
+      setAuthError(sessionError?.message || "Unable to restore your sign-in session.");
+      setAuthReady(true);
+    });
 
-});
-
-return () => {
-mounted = false;
-subscription.unsubscribe();
-};
-}, []);
-
-
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   function validateFile(selectedFile) {
     if (!ALLOWED_TYPES.includes(selectedFile.type)) {
