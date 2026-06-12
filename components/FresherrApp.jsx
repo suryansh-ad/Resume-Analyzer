@@ -120,6 +120,50 @@ function cleanCompletedAuthUrl() {
   }
 }
 
+async function recoverSessionFromCallbackUrl(source) {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const code = url.searchParams.get("code");
+  const accessToken = hashParams.get("access_token");
+  const refreshToken = hashParams.get("refresh_token");
+
+  console.info("[fresherr-auth] callback url check", {
+    source,
+    hasCode: Boolean(code),
+    hasAccessToken: Boolean(accessToken),
+    hasRefreshToken: Boolean(refreshToken),
+  });
+
+  if (accessToken && refreshToken) {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    console.info("[fresherr-auth] setSession from hash", {
+      error: error?.message,
+      hasSession: Boolean(data?.session),
+      userEmail: data?.session?.user?.email ?? null,
+    });
+
+    return data?.session ?? null;
+  }
+
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    console.info("[fresherr-auth] exchangeCodeForSession", {
+      error: error?.message,
+      hasSession: Boolean(data?.session),
+      userEmail: data?.session?.user?.email ?? null,
+    });
+
+    return data?.session ?? null;
+  }
+
+  return null;
+}
+
 function logAuthTrace(source, session, extra = {}) {
   console.info("[fresherr-auth]", source, {
     event: extra.event,
@@ -200,13 +244,13 @@ export function FresherrApp() {
       }
     });
 
-    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+    supabase.auth.getSession().then(async ({ data, error: sessionError }) => {
       if (!active) {
         return;
       }
 
       const isPasswordRecovery = hasPasswordRecoveryMarker();
-      const restoredSession = data?.session ?? null;
+      const restoredSession = data?.session ?? (await recoverSessionFromCallbackUrl("getSession"));
       const nextAuthError = restoredSession ? "" : sessionError?.message || getAuthErrorMessage();
       const hasAuthErrorParams = AUTH_ERROR_PARAMS.some((key) => {
         const searchParams = new URLSearchParams(window.location.search);
