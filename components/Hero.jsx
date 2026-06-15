@@ -52,6 +52,38 @@ export function Hero() {
               View Dashboard
             </Link>
           </div>
+
+          <div className="mt-12 border-t border-white/10 pt-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Popular AI Career Libraries
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link
+                href="/resume-examples/software-engineer"
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:border-purple-500/40 hover:bg-purple-500/5 hover:text-white"
+              >
+                Software Engineer
+              </Link>
+              <Link
+                href="/resume-examples/data-analyst"
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:border-purple-500/40 hover:bg-purple-500/5 hover:text-white"
+              >
+                Data Analyst
+              </Link>
+              <Link
+                href="/resume-examples/fresher-student"
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:border-purple-500/40 hover:bg-purple-500/5 hover:text-white"
+              >
+                Fresher / Student
+              </Link>
+              <Link
+                href="/resume-examples/python-developer"
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-300 transition hover:border-purple-500/40 hover:bg-purple-500/5 hover:text-white"
+              >
+                Python Developer
+              </Link>
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
