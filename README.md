@@ -4,7 +4,7 @@ Production Next.js App Router application for Fresherr.in. It provides an AI-pow
 
 ## Run locally
 
-1. Copy `.env.example` to `.env`
+1. Copy `.env.example` to `.env` 
 2. Add Supabase keys and at least one AI provider key
 3. Install dependencies with `npm install`
 4. Start the app with `npm run dev`
