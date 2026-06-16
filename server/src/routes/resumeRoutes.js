@@ -4,6 +4,7 @@ import { upload } from "../middleware/upload.js";
 import { requireAuth } from "../middleware/auth.js";
 import { analyzeResumeText } from "../services/aiService.js";
 import { extractTextFromFile } from "../services/extractText.js";
+import { logAnalysisAttempt } from "../services/dbLoggingService.js";
 
 const router = express.Router();
 
@@ -37,11 +38,23 @@ router.post("/upload", upload.single("resume"), async (req, res, next) => {
 });
 
 router.post("/analyze", async (req, res, next) => {
+  let userId = req.user?.id;
+  let fileName = req.body.file?.originalName || req.body.file?.name;
+  let fileSize = req.body.file?.size;
+
   try {
     const { extractedText, file } = req.body;
 
     if (!extractedText) {
-      res.status(400).json({ message: "Extracted resume text is required." });
+      const errorMsg = "Extracted resume text is required.";
+      await logAnalysisAttempt({
+        userId,
+        fileName,
+        fileSize,
+        status: "failed",
+        errorMessage: errorMsg,
+      });
+      res.status(400).json({ message: errorMsg });
       return;
     }
 
@@ -54,8 +67,26 @@ router.post("/analyze", async (req, res, next) => {
       analysis,
     };
 
+    // Log success to the database
+    await logAnalysisAttempt({
+      userId,
+      fileName,
+      fileSize,
+      status: "success",
+      atsScore: analysis.atsScore || analysis.ats_score,
+      resumeScore: analysis.resumeScore || analysis.resume_score,
+    });
+
     res.json(record);
   } catch (error) {
+    // Log failure to the database
+    await logAnalysisAttempt({
+      userId,
+      fileName,
+      fileSize,
+      status: "failed",
+      errorMessage: error.message || "Unknown analysis error",
+    });
     next(error);
   }
 });
