@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 const allowedMimeTypes = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
 ];
 
 export async function POST(request) {
@@ -19,14 +20,17 @@ export async function POST(request) {
     }
 
     const formData = await request.formData();
-    const uploadedFile = formData.get("resume");
+    const uploadedFile = formData.get("resume") || formData.get("jd") || formData.get("file");
 
     if (!uploadedFile || typeof uploadedFile === "string") {
-      return Response.json({ message: "Resume file is required." }, { status: 400 });
+      return Response.json({ message: "File is required." }, { status: 400 });
     }
 
-    if (!allowedMimeTypes.includes(uploadedFile.type)) {
-      return Response.json({ message: "Only PDF and DOCX files are supported." }, { status: 400 });
+    const ext = uploadedFile.name?.split(".").pop()?.toLowerCase();
+    const isAllowedExt = ["pdf", "docx", "doc"].includes(ext);
+
+    if (!allowedMimeTypes.includes(uploadedFile.type) && !isAllowedExt) {
+      return Response.json({ message: "Only PDF, DOC, and DOCX files are supported." }, { status: 400 });
     }
 
     const maxBytes = config.maxFileSizeMb * 1024 * 1024;

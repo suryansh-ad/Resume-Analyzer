@@ -19,5 +19,10 @@ export async function extractTextFromFile(file) {
     return parsed.value?.trim() || "";
   }
 
+  if (extension === "doc") {
+    const text = buffer.toString("ascii").replace(/[^\x20-\x7E\r\n\t]/g, " ");
+    return text.replace(/\s+/g, " ").trim();
+  }
+
   throw new Error("Unsupported file type for text extraction.");
 }

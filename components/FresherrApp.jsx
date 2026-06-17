@@ -24,10 +24,23 @@ const AnalysisDashboard = dynamic(
   }
 );
 
+const JdAnalysisDashboard = dynamic(
+  () => import("./JdAnalysisDashboard").then((module) => module.JdAnalysisDashboard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+        <LoadingSkeleton />
+      </div>
+    ),
+  }
+);
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
 ];
 
 const AUTH_ERROR_PARAMS = ["error", "error_code", "error_description"];
@@ -165,6 +178,16 @@ export function FresherrApp() {
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [authError, setAuthError] = useState("");
   const userRef = useRef(null);
+
+  // JD Analysis states
+  const [resumeExtractedText, setResumeExtractedText] = useState("");
+  const [analysisMode, setAnalysisMode] = useState("standard");
+  const [jdText, setJdText] = useState("");
+  const [jdFile, setJdFile] = useState(null);
+  const [jdFileProgress, setJdFileProgress] = useState(0);
+  const [jdFileLoading, setJdFileLoading] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState("Software Development");
+  const [selectedRoleId, setSelectedRoleId] = useState("frontend-developer");
 
   useEffect(() => {
     setRecord(getLatestAnalysis());
@@ -346,8 +369,11 @@ export function FresherrApp() {
   }, [previewUrl]);
 
   function validateFile(selectedFile) {
-    if (!ALLOWED_TYPES.includes(selectedFile.type)) {
-      return "Please upload a PDF or DOCX file.";
+    const ext = selectedFile.name?.split(".").pop()?.toLowerCase();
+    const isAllowedExt = ["pdf", "docx", "doc"].includes(ext);
+
+    if (!ALLOWED_TYPES.includes(selectedFile.type) && !isAllowedExt) {
+      return "Please upload a PDF, DOC, or DOCX file.";
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
@@ -357,7 +383,7 @@ export function FresherrApp() {
     return "";
   }
 
-  function handleFileSelect(selectedFile) {
+  async function handleFileSelect(selectedFile) {
     const validationError = validateFile(selectedFile);
     setError(validationError);
 
@@ -370,8 +396,25 @@ export function FresherrApp() {
     }
 
     setFile(selectedFile);
-    setProgress(0);
+    setProgress(15);
     setPreviewUrl(selectedFile.type === "application/pdf" ? URL.createObjectURL(selectedFile) : "");
+
+    // Background upload to extract text for recommendations immediately
+    try {
+      const formData = new FormData();
+      formData.append("resume", selectedFile);
+      const uploadResponse = await api.post("/resume/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+          if (event.total) {
+            setProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        }
+      });
+      setResumeExtractedText(uploadResponse.data.extractedText);
+    } catch (err) {
+      console.warn("Background upload failed:", err);
+    }
   }
 
   function handleRemoveFile() {
@@ -383,6 +426,50 @@ export function FresherrApp() {
     setPreviewUrl("");
     setProgress(0);
     setError("");
+    setResumeExtractedText("");
+  }
+
+  // JD File Upload Handlers
+  async function handleJdFileSelect(selectedFile) {
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setError("Job Description file size exceeds 10MB limit.");
+      return;
+    }
+    const ext = selectedFile.name?.split(".").pop()?.toLowerCase();
+    if (!["pdf", "docx", "doc"].includes(ext)) {
+      setError("Please upload a PDF, DOC, or DOCX for the Job Description.");
+      return;
+    }
+
+    setJdFile(selectedFile);
+    setJdFileProgress(15);
+    setJdFileLoading(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("jd", selectedFile);
+      const uploadResponse = await api.post("/resume/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (event) => {
+          if (event.total) {
+            setJdFileProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        }
+      });
+      setJdText(uploadResponse.data.extractedText);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to extract text from Job Description file.");
+      setJdFile(null);
+    } finally {
+      setJdFileLoading(false);
+    }
+  }
+
+  function handleJdFileRemove() {
+    setJdFile(null);
+    setJdText("");
+    setJdFileProgress(0);
   }
 
   async function handleAnalyze() {
@@ -402,26 +489,34 @@ export function FresherrApp() {
     setProgress(15);
 
     try {
-      const formData = new FormData();
-      formData.append("resume", file);
+      let finalResumeText = resumeExtractedText;
 
-      const uploadResponse = await api.post("/resume/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          if (!event.total) {
-            return;
-          }
+      if (!finalResumeText) {
+        const formData = new FormData();
+        formData.append("resume", file);
 
-          const percent = Math.min(70, Math.round((event.loaded / event.total) * 70));
-          setProgress(percent);
-        },
-      });
+        const uploadResponse = await api.post("/resume/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (event) => {
+            if (event.total) {
+              const percent = Math.min(70, Math.round((event.loaded / event.total) * 70));
+              setProgress(percent);
+            }
+          },
+        });
+        finalResumeText = uploadResponse.data.extractedText;
+        setResumeExtractedText(finalResumeText);
+      }
 
       setProgress(82);
 
       const analyzeResponse = await api.post("/resume/analyze", {
-        extractedText: uploadResponse.data.extractedText,
-        file: uploadResponse.data.file,
+        extractedText: finalResumeText,
+        file: {
+          originalName: file.name,
+          mimeType: file.type,
+          size: file.size,
+        },
       });
 
       setProgress(100);
@@ -429,6 +524,71 @@ export function FresherrApp() {
       saveLatestAnalysis(analyzeResponse.data);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Unable to analyze this resume right now.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAnalyzeJd() {
+    if (!user) {
+      setError("Please sign in before analyzing.");
+      window.location.hash = "auth";
+      return;
+    }
+
+    if (!file) {
+      setError("Please choose a resume to analyze.");
+      return;
+    }
+
+    let targetJdText = "";
+    if (analysisMode === "company-jd") {
+      targetJdText = jdText;
+    } else if (analysisMode === "library") {
+      // Find role template description
+      const { roleLibrary } = await import("../lib/roleLibrary.js");
+      const role = roleLibrary[selectedDomain]?.find(r => r.id === selectedRoleId);
+      targetJdText = role ? role.description : "";
+    }
+
+    if (!targetJdText || !targetJdText.trim()) {
+      setError("Please enter or upload a Job Description to match against.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setProgress(15);
+
+    try {
+      let finalResumeText = resumeExtractedText;
+
+      if (!finalResumeText) {
+        setProgress(30);
+        const formData = new FormData();
+        formData.append("resume", file);
+        const uploadResponse = await api.post("/resume/upload", formData);
+        finalResumeText = uploadResponse.data.extractedText;
+        setResumeExtractedText(finalResumeText);
+      }
+
+      setProgress(65);
+
+      const analyzeResponse = await api.post("/resume/analyze-jd", {
+        extractedText: finalResumeText,
+        file: {
+          originalName: file.name,
+          mimeType: file.type,
+          size: file.size,
+        },
+        jobDescription: targetJdText
+      });
+
+      setProgress(100);
+      setRecord(analyzeResponse.data);
+      saveLatestAnalysis(analyzeResponse.data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || "Unable to match resume with Job Description right now.");
     } finally {
       setLoading(false);
     }
@@ -469,6 +629,23 @@ export function FresherrApp() {
           onFileSelect={handleFileSelect}
           onRemove={handleRemoveFile}
           onAnalyze={handleAnalyze}
+          
+          analysisMode={analysisMode}
+          setAnalysisMode={setAnalysisMode}
+          jdText={jdText}
+          setJdText={setJdText}
+          jdFile={jdFile}
+          setJdFile={setJdFile}
+          jdFileProgress={jdFileProgress}
+          jdFileLoading={jdFileLoading}
+          onJdFileSelect={handleJdFileSelect}
+          onJdFileRemove={handleJdFileRemove}
+          selectedDomain={selectedDomain}
+          setSelectedDomain={setSelectedDomain}
+          selectedRoleId={selectedRoleId}
+          setSelectedRoleId={setSelectedRoleId}
+          onAnalyzeJd={handleAnalyzeJd}
+          resumeExtractedText={resumeExtractedText}
         />
       </main>
 
@@ -477,7 +654,13 @@ export function FresherrApp() {
           <LoadingSkeleton />
         </div>
       ) : (
-        <AnalysisDashboard record={record} keyword={keyword} onKeywordChange={setKeyword} />
+        record ? (
+          record.isJdAnalysis ? (
+            <JdAnalysisDashboard record={record} />
+          ) : (
+            <AnalysisDashboard record={record} keyword={keyword} onKeywordChange={setKeyword} />
+          )
+        ) : null
       )}
 
       <Footer />
