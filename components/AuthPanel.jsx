@@ -227,32 +227,8 @@ export function AuthPanel({ user, passwordRecovery, authError, onPasswordRecover
     );
   }
 
-  if (user) {
-    return (
-      <section id="auth" className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 rounded-[2rem] border border-cyan-300/20 bg-slate-900/70 p-6 shadow-glass backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-300">
-              <CheckCircle2 size={24} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-cyan-200">Authenticated</p>
-              <p className="mt-1 truncate text-sm text-slate-300">
-                Signed in as <span className="text-white">{user.email}</span>
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white transition hover:bg-white/15"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
-      </section>
-    );
+  if (user && !passwordRecovery) {
+    return null;
   }
 
   return (

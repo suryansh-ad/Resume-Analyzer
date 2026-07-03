@@ -68,21 +68,16 @@ export function Navbar({ user, authReady = true, onSignOut }) {
           {!authReady ? (
             <div aria-hidden="true" className="h-9 w-20 rounded-lg border border-white/10 bg-white/5 animate-pulse" />
           ) : user ? (
-            <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 py-1 pl-2 pr-1">
-              <span className="hidden max-w-32 items-center gap-1.5 truncate text-xs text-slate-300 lg:inline-flex">
-                <UserCircle size={14} className="shrink-0 text-cyan-400" />
-                <span className="truncate">{user.email}</span>
-              </span>
-              <button
-                type="button"
-                onClick={onSignOut}
-                className="rounded-md p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-white"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut size={14} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-red-500/20 hover:text-red-400 transition py-1.5 px-3 text-[11px] font-bold text-slate-300 cursor-pointer group"
+              title="Sign Out"
+            >
+              <UserCircle size={14} className="shrink-0 text-cyan-400 group-hover:text-cyan-300 transition" />
+              <span className="max-w-[90px] xs:max-w-[120px] truncate">{user.email}</span>
+              <LogOut size={13} className="shrink-0 text-slate-400 group-hover:text-red-400 transition ml-1" />
+            </button>
           ) : (
             <Link
               href="#auth"

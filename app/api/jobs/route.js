@@ -10,6 +10,8 @@ export async function GET(request) {
     const location = searchParams.get("location") || "";
     const remote = searchParams.get("remote") === "true";
     const experience = searchParams.get("experience") || "";
+    const hasSalaryOnly = searchParams.get("hasSalaryOnly") !== "false"; // Defaults to true
+    
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const skip = (page - 1) * limit;
@@ -25,13 +27,13 @@ export async function GET(request) {
       where.location = { contains: "remote", mode: "insensitive" };
     }
 
-    // 2. Filter by search query (title or company name)
+    // 2. Filter by search query (title, company, description, or skills)
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
         { company: { name: { contains: search, mode: "insensitive" } } },
         { description: { contains: search, mode: "insensitive" } },
-        { skills: { hasSome: [search] } } // Match if search matches array of skills
+        { skills: { hasSome: [search] } }
       ];
     }
 
@@ -39,6 +41,14 @@ export async function GET(request) {
       // 3. Experience filter (Jobs only)
       if (experience) {
         where.experience = { contains: experience, mode: "insensitive" };
+      }
+
+      // 4. Salary filter (Active by default)
+      if (hasSalaryOnly) {
+        where.salary = {
+          not: null,
+          notIn: ["", "Not specified", "Competitive", "Not Disclosed", "Competitive Salary"]
+        };
       }
 
       const [jobs, total] = await Promise.all([
@@ -63,6 +73,15 @@ export async function GET(request) {
       });
     } else {
       // Internships
+      
+      // 4. Stipend filter (Active by default)
+      if (hasSalaryOnly) {
+        where.stipend = {
+          not: null,
+          notIn: ["", "Not specified", "Competitive", "Not Disclosed", "Unpaid", "Competitive Stipend"]
+        };
+      }
+
       const [internships, total] = await Promise.all([
         prisma.internship.findMany({
           where,
@@ -85,7 +104,7 @@ export async function GET(request) {
       });
     }
   } catch (error) {
-    console.error("[API Jobs] GET Error:", error.message);
-    return Response.json({ message: error.message || "Failed to fetch opportunities." }, { status: 500 });
+    console.error("[GET /api/jobs] Error:", error.message);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 }

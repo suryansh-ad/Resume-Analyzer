@@ -15,6 +15,7 @@ function JobsPageContent() {
   const [locationFilter, setLocationFilter] = useState(searchParams.get("location") || "");
   const [isRemote, setIsRemote] = useState(searchParams.get("remote") === "true");
   const [experienceFilter, setExperienceFilter] = useState(searchParams.get("experience") || "");
+  const [onlyWithSalary, setOnlyWithSalary] = useState(true);
   
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,7 @@ function JobsPageContent() {
         location: locationFilter,
         remote: isRemote ? "true" : "false",
         experience: opportunityType === "job" ? experienceFilter : "",
+        hasSalaryOnly: onlyWithSalary ? "true" : "false",
         page: pageNumber.toString(),
         limit: "10"
       });
@@ -53,7 +55,7 @@ function JobsPageContent() {
   useEffect(() => {
     // Re-fetch on filter change
     fetchOpportunities(1);
-  }, [opportunityType, locationFilter, isRemote, experienceFilter]);
+  }, [opportunityType, locationFilter, isRemote, experienceFilter, onlyWithSalary]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -66,6 +68,7 @@ function JobsPageContent() {
     setIsRemote(false);
     setExperienceFilter("");
     setOpportunityType("job");
+    setOnlyWithSalary(true);
   };
 
   return (
@@ -161,6 +164,20 @@ function JobsPageContent() {
             />
             <label htmlFor="remote-check" className="text-xs font-medium text-slate-300 cursor-pointer">
               Remote Opportunities
+            </label>
+          </div>
+
+          {/* Salary checkbox */}
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="salary-check"
+              checked={onlyWithSalary}
+              onChange={(e) => setOnlyWithSalary(e.target.checked)}
+              className="h-4 w-4 rounded border-white/10 bg-slate-950 text-cyan-500 focus:ring-cyan-500/50"
+            />
+            <label htmlFor="salary-check" className="text-xs font-medium text-slate-300 cursor-pointer">
+              Disclosed Salary Only
             </label>
           </div>
 
