@@ -71,6 +71,18 @@ export async function POST(request, { params }) {
             analysisJson: analysis,
           }
         });
+
+        // Log to analysis_logs table
+        await prisma.analysisLog.create({
+          data: {
+            userId: user.id,
+            fileName: `Match: ${title}`,
+            fileSize: BigInt(resumeText.length),
+            status: "success",
+            atsScore: analysis.atsCompatibilityScore || 50,
+            resumeScore: analysis.overallMatchScore || 50,
+          }
+        });
       }
     } catch (authError) {
       // Ignore if user is anonymous - matching still works
@@ -80,6 +92,21 @@ export async function POST(request, { params }) {
     return Response.json(analysis);
   } catch (error) {
     console.error("[API Job Match] POST Error:", error.message);
+    try {
+      const { user } = await getAuthenticatedUser(request);
+      if (user) {
+        await prisma.analysisLog.create({
+          data: {
+            userId: user.id,
+            fileName: "Match Analysis",
+            status: "failed",
+            errorMessage: error.message || "Match error",
+          }
+        });
+      }
+    } catch (logErr) {
+      console.warn("[API Job Match] Failed to log failure to database:", logErr.message);
+    }
     return Response.json({ message: error.message || "Failed to analyze resume compatibility." }, { status: 500 });
   }
 }
