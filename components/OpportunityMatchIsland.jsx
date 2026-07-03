@@ -198,7 +198,7 @@ export function OpportunityMatchIsland({ opportunityId }) {
           {matchResult.missingKeywords && matchResult.missingKeywords.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-bold text-slate-300">Required ATS Keywords Missing</h4>
-              <div className="overflow-hidden border border-white/5 rounded-xl bg-slate-950/40">
+              <div className="overflow-x-auto border border-white/5 rounded-xl bg-slate-950/40">
                 <table className="min-w-full divide-y divide-white/5 text-left text-[11px]">
                   <thead>
                     <tr className="bg-slate-950 text-slate-400 font-semibold">

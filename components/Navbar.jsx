@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, UserCircle, Briefcase, Award, Code, Hammer, FileText } from "lucide-react";
+import { LogOut, UserCircle, Briefcase, Award, Hammer, FileText } from "lucide-react";
 
 export function Navbar({ user, authReady = true, onSignOut }) {
   const pathname = usePathname();
@@ -35,7 +35,7 @@ export function Navbar({ user, authReady = true, onSignOut }) {
           </div>
         </Link>
 
-        {/* Center Navigation Links */}
+        {/* Center Navigation Links (Desktop) */}
         <div className="hidden md:flex items-center gap-6">
           <Link
             href="/"
@@ -65,24 +65,6 @@ export function Navbar({ user, authReady = true, onSignOut }) {
 
         {/* User / Sign In Action */}
         <div className="flex items-center gap-4">
-          {/* Mobile navigation links shortcut */}
-          <div className="flex md:hidden items-center gap-3 mr-2">
-            {navLinks.slice(0, 3).map((link) => {
-              const isActive = pathname?.startsWith(link.path);
-              return (
-                <Link
-                  key={link.path}
-                  href={link.path}
-                  className={`text-xs font-semibold px-2 py-1 rounded-md transition ${
-                    isActive ? "bg-white/10 text-cyan-400" : "text-slate-400 hover:text-white"
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </div>
-
           {!authReady ? (
             <div aria-hidden="true" className="h-9 w-20 rounded-lg border border-white/10 bg-white/5 animate-pulse" />
           ) : user ? (
@@ -110,6 +92,32 @@ export function Navbar({ user, authReady = true, onSignOut }) {
             </Link>
           )}
         </div>
+      </div>
+
+      {/* Mobile sub-navigation bar (Horizontal slider on small screens) */}
+      <div className="flex md:hidden items-center gap-2 overflow-x-auto whitespace-nowrap px-4 py-2.5 border-t border-white/5 bg-slate-950/40 scrollbar-none justify-start sm:justify-center">
+        <Link
+          href="/"
+          className={`text-[11px] font-bold px-3 py-1 rounded-lg transition ${
+            pathname === "/" ? "bg-white/10 text-cyan-400" : "text-slate-400 hover:text-white"
+          }`}
+        >
+          Home
+        </Link>
+        {navLinks.map((link) => {
+          const isActive = pathname?.startsWith(link.path);
+          return (
+            <Link
+              key={link.path}
+              href={link.path}
+              className={`text-[11px] font-bold px-3 py-1 rounded-lg transition ${
+                isActive ? "bg-white/10 text-cyan-400" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {link.name}
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );
