@@ -1,6 +1,4 @@
 import { notFound } from "next/navigation";
-import { Navbar } from "../../../components/Navbar";
-import { Footer } from "../../../components/Footer";
 import { Breadcrumbs } from "../../../components/Breadcrumbs";
 import { SeoCtaCard } from "../../../components/SeoCtaCard";
 import { niches } from "../../../lib/seo-data";
@@ -38,9 +36,7 @@ export default async function ResumeSkillsPage({ params }) {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100 font-sans">
-      <Navbar authReady={false} />
-
+    <div className="flex flex-col text-slate-100 font-sans">
       <main className="mx-auto flex-1 w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumbs items={breadcrumbItems} />
 
@@ -95,8 +91,6 @@ export default async function ResumeSkillsPage({ params }) {
           <SeoCtaCard profession={profession} professionName={niche.name} currentHub="resume-skills" />
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

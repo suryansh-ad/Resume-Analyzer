@@ -1,7 +1,5 @@
 import Script from "next/script";
 import { AboutPage } from "../../components/AboutPage";
-import { Footer } from "../../components/Footer";
-import { Navbar } from "../../components/Navbar";
 import { breadcrumbJsonLd, createMetadata } from "../../lib/seo";
 
 export const metadata = createMetadata({
@@ -22,9 +20,7 @@ export default function AboutRoute() {
           ])
         )}
       </Script>
-      <Navbar />
       <AboutPage />
-      <Footer />
     </div>
   );
 }
