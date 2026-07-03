@@ -2,6 +2,7 @@ import { Sora } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { createMetadata, organizationJsonLd } from "../lib/seo";
+import { LayoutWrapper } from "../components/LayoutWrapper";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -34,7 +35,7 @@ export default function RootLayout({ children }) {
             </Script>
           </>
         ) : null}
-        {children}
+        <LayoutWrapper>{children}</LayoutWrapper>
       </body>
     </html>
   );

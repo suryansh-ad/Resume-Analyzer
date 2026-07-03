@@ -603,19 +603,10 @@ export function FresherrApp() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]">
-      <Navbar user={user} authReady={authReady} onSignOut={handleSignOut} />
+    <div className="bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))] pt-8 pb-16">
       <Hero />
 
-      {authReady ? (
-        <AuthPanel
-          user={user}
-          passwordRecovery={passwordRecovery}
-          authError={authError}
-          onPasswordRecoveryComplete={() => setPasswordRecovery(false)}
-          onSignOut={handleSignOut}
-        />
-      ) : null}
+      {/* AuthPanel is now managed globally in LayoutWrapper */}
 
       <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         <UploadPanel
@@ -663,7 +654,6 @@ export function FresherrApp() {
         ) : null
       )}
 
-      <Footer />
     </div>
   );
 }
