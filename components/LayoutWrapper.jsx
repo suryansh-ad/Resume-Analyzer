@@ -85,7 +85,7 @@ export function LayoutWrapper({ children }) {
           />
         )}
 
-        <main className="flex-grow">{children}</main>
+        <main className="flex-grow pt-[104px] md:pt-[68px]">{children}</main>
 
         <Footer />
       </div>

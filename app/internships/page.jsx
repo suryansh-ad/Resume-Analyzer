@@ -62,8 +62,14 @@ function InternshipsPageContent() {
     setSearchQuery("");
     setLocationFilter("");
     setIsRemote(false);
-    setOnlyWithSalary(true);
+    setOnlyWithSalary(false);
   };
+
+  const activeFiltersCount = 
+    (locationFilter ? 1 : 0) +
+    (isRemote ? 1 : 0) +
+    (onlyWithSalary ? 1 : 0) +
+    (searchQuery ? 1 : 0);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -84,16 +90,26 @@ function InternshipsPageContent() {
         </span>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-1.5 px-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer"
+          className="relative flex items-center gap-1.5 px-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer"
         >
           <Filter size={12} className="text-cyan-400" />
           {showFilters ? "Hide Filters" : "Filter Options"}
+          {activeFiltersCount > 0 && (
+            <span className="absolute -top-2 -left-2 bg-cyan-500 text-slate-950 text-[10px] font-extrabold h-5 w-5 flex items-center justify-center rounded-full shadow-lg shadow-cyan-500/20 border border-slate-950">
+              {activeFiltersCount}
+            </span>
+          )}
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-start">
         {/* Sidebar Filters */}
-        <aside className={`${showFilters ? "block" : "hidden"} lg:block rounded-2xl border border-white/10 bg-slate-900/20 p-6 space-y-6`}>
+        <aside className={`relative ${showFilters ? "block" : "hidden"} lg:block rounded-2xl border border-white/10 bg-slate-900/20 p-6 space-y-6`}>
+          {activeFiltersCount > 0 && (
+            <span className="absolute -top-2.5 -left-2 bg-cyan-500 text-slate-950 text-[10px] font-extrabold h-5 w-5 flex items-center justify-center rounded-full shadow-lg shadow-cyan-500/20 border border-slate-950">
+              {activeFiltersCount}
+            </span>
+          )}
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">Filters</h2>
             <button

@@ -11,6 +11,7 @@ import { UploadPanel } from "./UploadPanel";
 import { api } from "../lib/api";
 import { getLatestAnalysis, saveLatestAnalysis } from "../lib/storage";
 import { supabase } from "../lib/supabase/client";
+import { UploadCloud } from "lucide-react";
 
 const AnalysisDashboard = dynamic(
   () => import("./AnalysisDashboard").then((module) => module.AnalysisDashboard),
@@ -609,35 +610,60 @@ export function FresherrApp() {
       {/* AuthPanel is now managed globally in LayoutWrapper */}
 
       <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <UploadPanel
-          file={file}
-          previewUrl={previewUrl}
-          progress={progress}
-          loading={loading}
-          error={error}
-          authReady={authReady}
-          isAuthenticated={Boolean(user)}
-          onFileSelect={handleFileSelect}
-          onRemove={handleRemoveFile}
-          onAnalyze={handleAnalyze}
-          
-          analysisMode={analysisMode}
-          setAnalysisMode={setAnalysisMode}
-          jdText={jdText}
-          setJdText={setJdText}
-          jdFile={jdFile}
-          setJdFile={setJdFile}
-          jdFileProgress={jdFileProgress}
-          jdFileLoading={jdFileLoading}
-          onJdFileSelect={handleJdFileSelect}
-          onJdFileRemove={handleJdFileRemove}
-          selectedDomain={selectedDomain}
-          setSelectedDomain={setSelectedDomain}
-          selectedRoleId={selectedRoleId}
-          setSelectedRoleId={setSelectedRoleId}
-          onAnalyzeJd={handleAnalyzeJd}
-          resumeExtractedText={resumeExtractedText}
-        />
+        {!authReady ? (
+          <div className="mx-auto max-w-2xl text-center py-20 animate-pulse">
+            <div className="h-8 bg-white/5 rounded w-1/3 mx-auto mb-4" />
+            <div className="h-20 bg-white/5 rounded w-full" />
+          </div>
+        ) : !user ? (
+          <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-slate-900/40 p-8 text-center space-y-6 backdrop-blur-sm shadow-xl mt-8">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+              <UploadCloud size={32} className="text-cyan-400 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-white">Sign In to Analyze Resumes</h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Analyze your resume against 29+ top tech companies, get real-time compatibility scores, skill gaps, and interview prep questions.
+              </p>
+            </div>
+            <a
+              href="#auth"
+              className="inline-flex items-center justify-center rounded-xl bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 text-sm font-bold px-6 py-3 cursor-pointer w-full shadow-lg shadow-cyan-500/20 animate-bounce"
+            >
+              Sign In / Sign Up
+            </a>
+          </div>
+        ) : (
+          <UploadPanel
+            file={file}
+            previewUrl={previewUrl}
+            progress={progress}
+            loading={loading}
+            error={error}
+            authReady={authReady}
+            isAuthenticated={Boolean(user)}
+            onFileSelect={handleFileSelect}
+            onRemove={handleRemoveFile}
+            onAnalyze={handleAnalyze}
+            
+            analysisMode={analysisMode}
+            setAnalysisMode={setAnalysisMode}
+            jdText={jdText}
+            setJdText={setJdText}
+            jdFile={jdFile}
+            setJdFile={setJdFile}
+            jdFileProgress={jdFileProgress}
+            jdFileLoading={jdFileLoading}
+            onJdFileSelect={handleJdFileSelect}
+            onJdFileRemove={handleJdFileRemove}
+            selectedDomain={selectedDomain}
+            setSelectedDomain={setSelectedDomain}
+            selectedRoleId={selectedRoleId}
+            setSelectedRoleId={setSelectedRoleId}
+            onAnalyzeJd={handleAnalyzeJd}
+            resumeExtractedText={resumeExtractedText}
+          />
+        )}
       </main>
 
       {loading ? (

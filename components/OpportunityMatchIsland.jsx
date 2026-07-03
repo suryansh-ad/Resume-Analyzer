@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, BarChart2, Star, PlusCircle, CheckCircle } from "lucide-react";
 import { api } from "../lib/api.js";
+import { useAuth } from "./LayoutWrapper.jsx";
 
 export function OpportunityMatchIsland({ opportunityId }) {
+  const { user, authReady } = useAuth();
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -80,20 +82,41 @@ export function OpportunityMatchIsland({ opportunityId }) {
         Analyze your resume against this opportunity to discover match scores, missing skills, and tailored resume optimization suggestions.
       </p>
 
-      {/* Upload State */}
-      {!file && !matchResult && (
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-cyan-500/30 bg-slate-950/40 hover:bg-slate-950/80 transition cursor-pointer text-center group">
-          <UploadCloud className="text-slate-500 group-hover:text-cyan-400 transition mb-3" size={32} />
-          <span className="text-xs font-bold text-white mb-1">Upload your resume to check compatibility</span>
-          <span className="text-[10px] text-slate-500">Supports PDF, DOC, or DOCX up to 10MB</span>
-          <input
-            type="file"
-            accept=".pdf,.docx,.doc"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </label>
-      )}
+      {!authReady ? (
+        <div className="h-28 rounded-2xl bg-white/5 animate-pulse" />
+      ) : !user ? (
+        <div className="rounded-xl border border-white/5 bg-slate-950/50 p-6 text-center space-y-4">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400">
+            <UploadCloud size={20} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-white">Sign In Required</h3>
+            <p className="text-xs text-slate-400 leading-relaxed max-w-[220px] mx-auto">
+              Please sign in to analyze your resume and get compatibility matches.
+            </p>
+          </div>
+          <a
+            href="#auth"
+            className="inline-flex items-center justify-center rounded-xl bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 text-xs font-bold px-4 py-2 cursor-pointer w-full shadow-md shadow-cyan-500/10"
+          >
+            Sign In to Unlock
+          </a>
+        </div>
+      ) : (
+        <>
+          {!file && !matchResult && (
+            <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-2xl p-8 hover:border-cyan-500/30 bg-slate-950/40 hover:bg-slate-950/80 transition cursor-pointer text-center group">
+              <UploadCloud className="text-slate-500 group-hover:text-cyan-400 transition mb-3" size={32} />
+              <span className="text-xs font-bold text-white mb-1">Upload your resume to check compatibility</span>
+              <span className="text-[10px] text-slate-500">Supports PDF, DOC, or DOCX up to 10MB</span>
+              <input
+                type="file"
+                accept=".pdf,.docx,.doc"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          )}
 
       {/* Loading State */}
       {loading && (
@@ -264,6 +287,8 @@ export function OpportunityMatchIsland({ opportunityId }) {
             </button>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

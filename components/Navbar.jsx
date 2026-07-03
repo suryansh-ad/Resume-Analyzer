@@ -90,7 +90,7 @@ export function Navbar({ user, authReady = true, onSignOut }) {
       </div>
 
       {/* Mobile sub-navigation bar (Horizontal slider on small screens) */}
-      <div className="flex md:hidden items-center gap-2 overflow-x-auto whitespace-nowrap px-4 py-2.5 border-t border-white/5 bg-slate-950/40 scrollbar-none justify-start sm:justify-center">
+      <div className="flex md:hidden items-center gap-2 overflow-x-auto whitespace-nowrap px-4 py-2.5 border-t border-white/5 bg-slate-950 scrollbar-none justify-start sm:justify-center">
         <Link
           href="/"
           className={`text-[11px] font-bold px-3 py-1 rounded-lg transition ${
