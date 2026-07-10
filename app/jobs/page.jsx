@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Search, MapPin, Briefcase, Calendar, ChevronLeft, ChevronRight, X, AlertCircle, Filter } from "lucide-react";
+import { Search, MapPin, Briefcase, Calendar, ChevronLeft, ChevronRight, X, AlertCircle, Filter, Building2 } from "lucide-react";
 
 function JobsPageContent() {
   const searchParams = useSearchParams();
@@ -263,12 +263,12 @@ function JobsPageContent() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex gap-4">
                       {opp.company.logo ? (
-                        <div className="h-11 w-11 relative bg-white/5 rounded-xl p-1.5 flex items-center justify-center shrink-0">
+                        <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                           <img src={opp.company.logo} alt={opp.company.name} className="max-h-full max-w-full object-contain" />
                         </div>
                       ) : (
-                        <div className="h-11 w-11 bg-white/5 rounded-xl flex items-center justify-center shrink-0 text-cyan-400 font-bold">
-                          {opp.company.name[0]}
+                        <div className="h-14 w-14 bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shrink-0 text-cyan-400 shadow-md shadow-cyan-500/10">
+                          <Building2 size={22} className="text-cyan-400" />
                         </div>
                       )}
                       <div>

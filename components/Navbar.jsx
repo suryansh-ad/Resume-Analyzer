@@ -3,10 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, UserCircle, Briefcase, Award, Hammer, FileText } from "lucide-react";
+import { LogOut, UserCircle, Briefcase, Award, Hammer, FileText, Sparkles } from "lucide-react";
+import { useAuth } from "./LayoutWrapper";
 
 export function Navbar({ user, authReady = true, onSignOut }) {
   const pathname = usePathname();
+  const { profile, openProfileModal } = useAuth();
+  const hasProfile = profile && ((profile.skills || []).length > 0 || (profile.interests || []).length > 0);
 
   const navLinks = [
     { name: "Jobs", path: "/jobs", icon: Briefcase },
@@ -68,16 +71,37 @@ export function Navbar({ user, authReady = true, onSignOut }) {
           {!authReady ? (
             <div aria-hidden="true" className="h-9 w-20 rounded-lg border border-white/10 bg-white/5 animate-pulse" />
           ) : user ? (
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-red-500/20 hover:text-red-400 transition py-1.5 px-3 text-[11px] font-bold text-slate-300 cursor-pointer group"
-              title="Sign Out"
-            >
-              <UserCircle size={14} className="shrink-0 text-cyan-400 group-hover:text-cyan-300 transition" />
-              <span className="max-w-[90px] xs:max-w-[120px] truncate">{user.email}</span>
-              <LogOut size={13} className="shrink-0 text-slate-400 group-hover:text-red-400 transition ml-1" />
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={openProfileModal}
+                className={`relative flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-bold transition cursor-pointer ${
+                  hasProfile 
+                    ? "border-cyan-500/30 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50" 
+                    : "border-amber-500/30 bg-amber-500/5 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50"
+                }`}
+              >
+                <Sparkles size={12} className={hasProfile ? "text-cyan-400 animate-pulse" : "text-amber-400 animate-bounce"} />
+                <span>{hasProfile ? "Career Matches" : "Complete Profile"}</span>
+                {!hasProfile && (
+                  <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-red-500/20 hover:text-red-400 transition py-1.5 px-3 text-[11px] font-bold text-slate-300 cursor-pointer group"
+                title="Sign Out"
+              >
+                <UserCircle size={14} className="shrink-0 text-cyan-400 group-hover:text-cyan-300 transition" />
+                <span className="max-w-[70px] xs:max-w-[100px] truncate">{user.email}</span>
+                <LogOut size={13} className="shrink-0 text-slate-400 group-hover:text-red-400 transition ml-1" />
+              </button>
+            </div>
           ) : (
             <Link
               href="#auth"

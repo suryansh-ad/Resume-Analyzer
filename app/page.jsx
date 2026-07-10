@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "../lib/prisma.js";
-import { Search, MapPin, Briefcase, Award, TrendingUp, Calendar, ArrowUpRight, FileText } from "lucide-react";
+import { Search, MapPin, Briefcase, Award, TrendingUp, Calendar, ArrowUpRight, FileText, Building2 } from "lucide-react";
+import { CuratedMatchesPromo } from "../components/CuratedMatchesPromo";
 
 export const metadata = {
   title: "Fresherr.in - Discover Jobs, Internships & Hackathons in India",
@@ -130,6 +131,9 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Curated Matches Promo Section */}
+        <CuratedMatchesPromo />
+
         {/* Jobs & Internships Split */}
         <div className="grid lg:grid-cols-[1fr_1fr] gap-12 mb-20">
           {/* Latest Jobs Column */}
@@ -154,12 +158,12 @@ export default async function HomePage() {
                   className="flex gap-4 p-5 rounded-2xl border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-cyan-500/20 transition group"
                 >
                   {job.company.logo ? (
-                    <div className="h-10 w-10 relative bg-white/5 rounded-lg p-1.5 flex items-center justify-center shrink-0">
+                    <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                       <img src={job.company.logo} alt={job.company.name} className="max-h-full max-w-full object-contain" />
                     </div>
                   ) : (
-                    <div className="h-10 w-10 bg-white/5 rounded-lg flex items-center justify-center shrink-0 text-cyan-400 font-bold">
-                      {job.company.name[0]}
+                    <div className="h-14 w-14 bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shrink-0 text-cyan-400 shadow-md shadow-cyan-500/10">
+                      <Building2 size={22} className="text-cyan-400" />
                     </div>
                   )}
                   <div className="flex-grow min-w-0">
@@ -211,12 +215,12 @@ export default async function HomePage() {
                   className="flex gap-4 p-5 rounded-2xl border border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-cyan-500/20 transition group"
                 >
                   {internship.company.logo ? (
-                    <div className="h-10 w-10 relative bg-white/5 rounded-lg p-1.5 flex items-center justify-center shrink-0">
+                    <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                       <img src={internship.company.logo} alt={internship.company.name} className="max-h-full max-w-full object-contain" />
                     </div>
                   ) : (
-                    <div className="h-10 w-10 bg-white/5 rounded-lg flex items-center justify-center shrink-0 text-cyan-400 font-bold">
-                      {internship.company.name[0]}
+                    <div className="h-14 w-14 bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shrink-0 text-cyan-400 shadow-md shadow-cyan-500/10">
+                      <Building2 size={22} className="text-cyan-400" />
                     </div>
                   )}
                   <div className="flex-grow min-w-0">

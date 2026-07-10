@@ -467,6 +467,7 @@ model users {
   webauthn_credentials        webauthn_credentials[]
   analysis_logs               AnalysisLog[]
   bookmarks                   Bookmark[]
+  userProfile                 UserProfile?
 
   @@index([created_at(sort: Desc)], map: "idx_users_created_at_desc")
   @@index([email], map: "idx_users_email")
@@ -685,5 +686,21 @@ model Bookmark {
 
   @@unique([userId, opportunityType, opportunityId])
   @@map("bookmarks")
+  @@schema("public")
+}
+
+model UserProfile {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @unique @map("user_id") @db.Uuid
+  user         users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  skills       String[]
+  interests    String[]
+  resumeText   String?  @map("resume_text")
+  resumeName   String?  @map("resume_name")
+  hasSkipped   Boolean  @default(false) @map("has_skipped")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("user_profiles")
   @@schema("public")
 }

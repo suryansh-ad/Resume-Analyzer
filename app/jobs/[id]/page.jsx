@@ -3,7 +3,7 @@ import Script from "next/script";
 import Link from "next/link";
 import { prisma } from "../../../lib/prisma.js";
 import { OpportunityMatchIsland } from "../../../components/OpportunityMatchIsland.jsx";
-import { MapPin, Briefcase, Calendar, ChevronRight, Award, DollarSign, Clock, ExternalLink, AlertCircle } from "lucide-react";
+import { MapPin, Briefcase, Calendar, ChevronRight, Award, DollarSign, Clock, ExternalLink, AlertCircle, Building2 } from "lucide-react";
 
 // Check if parameter is a valid UUID
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -154,8 +154,8 @@ export default async function JobDetailsPage({ params }) {
                         <img src={opportunity.company.logo} alt={opportunity.company.name} className="max-h-full max-w-full object-contain" />
                       </div>
                     ) : (
-                      <div className="h-16 w-16 bg-white/5 rounded-2xl flex items-center justify-center shrink-0 text-cyan-400 font-extrabold text-2xl border border-white/10">
-                        {opportunity.company.name[0]}
+                      <div className="h-16 w-16 bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 rounded-2xl flex items-center justify-center shrink-0 text-cyan-400 shadow-md shadow-cyan-500/10">
+                        <Building2 size={26} className="text-cyan-400" />
                       </div>
                     )}
                     <div>
@@ -350,12 +350,12 @@ export default async function JobDetailsPage({ params }) {
               >
                 <div className="flex gap-4">
                   {opp.company.logo ? (
-                    <div className="h-10 w-10 relative bg-white rounded-lg p-1.5 flex items-center justify-center shrink-0">
+                    <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                       <img src={opp.company.logo} alt={opp.company.name} className="max-h-full max-w-full object-contain" />
                     </div>
                   ) : (
-                    <div className="h-10 w-10 bg-white/5 rounded-lg flex items-center justify-center shrink-0 text-cyan-400 font-bold">
-                      {opp.company.name[0]}
+                    <div className="h-14 w-14 bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 rounded-xl flex items-center justify-center shrink-0 text-cyan-400 shadow-md shadow-cyan-500/10">
+                      <Building2 size={22} className="text-cyan-400" />
                     </div>
                   )}
                   <div>
