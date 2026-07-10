@@ -30,7 +30,7 @@ export async function POST(request) {
     const { user, response } = await getAuthenticatedUser(request);
     if (response) return response;
 
-    const { skills, interests, hasSkipped } = await request.json();
+    const { skills, interests, experienceYears, cityPreference, hasSkipped } = await request.json();
 
     const normalizedSkills = Array.isArray(skills)
       ? skills.map(s => s.trim()).filter(Boolean)
@@ -44,12 +44,16 @@ export async function POST(request) {
       update: {
         skills: normalizedSkills,
         interests: normalizedInterests,
+        experienceYears: typeof experienceYears === "number" ? experienceYears : parseInt(experienceYears) || 0,
+        cityPreference: cityPreference || null,
         hasSkipped: Boolean(hasSkipped),
       },
       create: {
         userId: user.id,
         skills: normalizedSkills,
         interests: normalizedInterests,
+        experienceYears: typeof experienceYears === "number" ? experienceYears : parseInt(experienceYears) || 0,
+        cityPreference: cityPreference || null,
         hasSkipped: Boolean(hasSkipped),
       },
     });

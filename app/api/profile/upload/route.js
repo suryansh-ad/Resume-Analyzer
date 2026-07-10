@@ -56,11 +56,16 @@ export async function POST(request) {
     const skills = analysis.skills || analysis.technicalSkills || [];
     const interests = analysis.jobRoles || [];
 
+    const experienceYears = extractExperienceYears(extractedText);
+    const cityPreference = extractCityPreference(extractedText);
+
     const profile = await prisma.userProfile.upsert({
       where: { userId: user.id },
       update: {
         skills,
         interests,
+        experienceYears,
+        cityPreference,
         resumeText: extractedText,
         resumeName: uploadedFile.name,
         hasSkipped: false,
@@ -69,6 +74,8 @@ export async function POST(request) {
         userId: user.id,
         skills,
         interests,
+        experienceYears,
+        cityPreference,
         resumeText: extractedText,
         resumeName: uploadedFile.name,
         hasSkipped: false,
@@ -80,4 +87,48 @@ export async function POST(request) {
     console.error("[POST /api/profile/upload] Error:", error.message);
     return Response.json({ message: error.message || "Something went wrong." }, { status: error.status || 500 });
   }
+}
+
+function extractExperienceYears(text) {
+  const normalized = (text || "").toLowerCase();
+  
+  // Try matching "X+ years of experience" or similar
+  const matches = normalized.match(/(\d+)\+?\s*(years?|yrs?)\s*(of\s*)?experience/);
+  if (matches) {
+    return Math.min(10, parseInt(matches[1]) || 0);
+  }
+  
+  // Alternate check for "experience\s*:\s*X"
+  const expMatch = normalized.match(/experience\s*:\s*(\d+)/);
+  if (expMatch) {
+    return Math.min(10, parseInt(expMatch[1]) || 0);
+  }
+  
+  return 0; // Default to fresh grad
+}
+
+function extractCityPreference(text) {
+  const normalized = (text || "").toLowerCase();
+  
+  const cities = [
+    { name: "Bangalore", match: ["bangalore", "bengaluru"] },
+    { name: "Hyderabad", match: ["hyderabad"] },
+    { name: "Pune", match: ["pune"] },
+    { name: "Gurgaon", match: ["gurgaon", "gurugram"] },
+    { name: "Noida", match: ["noida"] },
+    { name: "Mumbai", match: ["mumbai"] },
+    { name: "Chennai", match: ["chennai"] },
+    { name: "Kolkata", match: ["kolkata"] },
+    { name: "Remote", match: ["remote", "work from home", "wfh"] }
+  ];
+
+  for (const city of cities) {
+    for (const pattern of city.match) {
+      if (normalized.includes(pattern)) {
+        return city.name;
+      }
+    }
+  }
+  
+  return null;
 }

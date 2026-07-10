@@ -3,13 +3,16 @@
 import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import { useAuth } from "./LayoutWrapper";
 
+import { useRouter } from "next/navigation";
+
 export function CuratedMatchesPromo() {
-  const { user, authReady, openProfileModal } = useAuth();
+  const { user, authReady } = useAuth();
+  const router = useRouter();
 
   const handleCtaClick = () => {
     if (!authReady) return;
     if (user) {
-      openProfileModal();
+      router.push("/matches");
     } else {
       const authSection = document.getElementById("auth");
       if (authSection) {

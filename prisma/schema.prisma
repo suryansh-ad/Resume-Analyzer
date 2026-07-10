@@ -693,13 +693,15 @@ model UserProfile {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId       String   @unique @map("user_id") @db.Uuid
   user         users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  skills       String[]
-  interests    String[]
-  resumeText   String?  @map("resume_text")
-  resumeName   String?  @map("resume_name")
-  hasSkipped   Boolean  @default(false) @map("has_skipped")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  skills          String[]
+  interests       String[]
+  experienceYears Int      @default(0) @map("experience_years")
+  cityPreference  String?  @map("city_preference")
+  resumeText      String?  @map("resume_text")
+  resumeName      String?  @map("resume_name")
+  hasSkipped      Boolean  @default(false) @map("has_skipped")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("user_profiles")
   @@schema("public")

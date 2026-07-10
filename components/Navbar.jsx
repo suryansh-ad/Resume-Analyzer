@@ -2,19 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, UserCircle, Briefcase, Award, Hammer, FileText, Sparkles } from "lucide-react";
 import { useAuth } from "./LayoutWrapper";
 
 export function Navbar({ user, authReady = true, onSignOut }) {
   const pathname = usePathname();
-  const { profile, openProfileModal } = useAuth();
+  const router = useRouter();
+  const { profile } = useAuth();
   const hasProfile = profile && ((profile.skills || []).length > 0 || (profile.interests || []).length > 0);
 
   const navLinks = [
     { name: "Jobs", path: "/jobs", icon: Briefcase },
     { name: "Internships", path: "/internships", icon: FileText },
     { name: "Hackathons", path: "/hackathons", icon: Award },
+    { name: "Matches", path: "/matches", icon: Sparkles },
     { name: "Tools", path: "/tools", icon: Hammer },
   ];
 
@@ -74,7 +76,7 @@ export function Navbar({ user, authReady = true, onSignOut }) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={openProfileModal}
+                onClick={() => router.push("/matches")}
                 className={`relative flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[11px] font-bold transition cursor-pointer ${
                   hasProfile 
                     ? "border-cyan-500/30 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50" 

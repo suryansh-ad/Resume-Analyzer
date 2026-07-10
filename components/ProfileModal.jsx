@@ -28,6 +28,8 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState("");
   const [interests, setInterests] = useState([]);
+  const [experienceYears, setExperienceYears] = useState(0);
+  const [cityPreference, setCityPreference] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [matches, setMatches] = useState(null);
@@ -49,6 +51,8 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
       if (currentProfile) {
         setSkills(currentProfile.skills || []);
         setInterests(currentProfile.interests || []);
+        setExperienceYears(currentProfile.experienceYears ?? 0);
+        setCityPreference(currentProfile.cityPreference ?? "");
         if ((currentProfile.skills || []).length > 0 || (currentProfile.interests || []).length > 0) {
           fetchMatches();
         } else {
@@ -58,6 +62,8 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
       } else {
         setSkills([]);
         setInterests([]);
+        setExperienceYears(0);
+        setCityPreference("");
         setViewingMatches(false);
         setMatches(null);
       }
@@ -108,6 +114,8 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
       const response = await api.post("/profile", {
         skills,
         interests,
+        experienceYears,
+        cityPreference,
         hasSkipped: false,
       });
       if (onProfileSaved) {
@@ -198,6 +206,8 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
       // Refresh form elements with extracted values
       setSkills(response.data.profile.skills || []);
       setInterests(response.data.profile.interests || []);
+      setExperienceYears(response.data.profile.experienceYears ?? 0);
+      setCityPreference(response.data.profile.cityPreference ?? "");
       
       await fetchMatches();
     } catch (err) {
@@ -211,10 +221,10 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
       <div 
         id="profile-modal"
-        className="relative w-full max-w-3xl rounded-[2rem] border border-white/10 bg-slate-900/90 p-6 md:p-8 shadow-2xl backdrop-blur-md overflow-hidden max-h-[90vh] flex flex-col text-white"
+        className="relative w-full sm:max-w-3xl h-[100dvh] sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[2rem] border-0 sm:border border-white/10 bg-slate-950 sm:bg-slate-900/90 p-4 sm:p-8 shadow-2xl backdrop-blur-md overflow-hidden flex flex-col text-white"
       >
         {/* Top Gradient Accents */}
         <div className="absolute top-0 left-1/4 h-24 w-1/2 rounded-full bg-cyan-500/10 blur-xl pointer-events-none" />
@@ -361,6 +371,49 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                       })}
                     </div>
                   </div>
+                  {/* Experience and Location Preferences */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    {/* Work Experience */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
+                        Work Experience
+                      </label>
+                      <select
+                        value={experienceYears}
+                        onChange={(e) => setExperienceYears(parseInt(e.target.value) || 0)}
+                        className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                      >
+                        <option value={0}>Fresher / Less than 1 year</option>
+                        <option value={1}>1 Year</option>
+                        <option value={2}>2 Years</option>
+                        <option value={3}>3+ Years</option>
+                        <option value={5}>5+ Years</option>
+                      </select>
+                    </div>
+
+                    {/* City Preference */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
+                        City Preference
+                      </label>
+                      <select
+                        value={cityPreference}
+                        onChange={(e) => setCityPreference(e.target.value)}
+                        className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3.5 text-xs text-white focus:outline-none focus:border-cyan-500/50"
+                      >
+                        <option value="">Any City / Not Specified</option>
+                        <option value="Bangalore">Bangalore / Bengaluru</option>
+                        <option value="Hyderabad">Hyderabad</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Gurgaon">Gurgaon / Delhi NCR</option>
+                        <option value="Noida">Noida</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Chennai">Chennai</option>
+                        <option value="Kolkata">Kolkata</option>
+                        <option value="Remote">Remote Only</option>
+                      </select>
+                    </div>
+                  </div>
                 </form>
               ) : (
                 <div className="space-y-4">
@@ -484,7 +537,7 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                     matches.jobs.map((job) => (
                       <div 
                         key={job.id} 
-                        className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-950/20 hover:bg-slate-950/40 transition group"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-950/20 hover:bg-slate-950/40 transition group"
                       >
                         <div className="flex gap-3 min-w-0">
                           {job.company.logo ? (
@@ -517,7 +570,7 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                         </div>
 
                         {/* Match Score Badge */}
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto border-t border-white/5 sm:border-0 pt-3 sm:pt-0">
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             {job.matchPercentage}% Match
                           </span>
@@ -541,7 +594,7 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                     matches.internships.map((internship) => (
                       <div 
                         key={internship.id} 
-                        className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-950/20 hover:bg-slate-950/40 transition group"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-950/20 hover:bg-slate-950/40 transition group"
                       >
                         <div className="flex gap-3 min-w-0">
                           {internship.company.logo ? (
@@ -574,7 +627,7 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                         </div>
 
                         {/* Match Score Badge */}
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 w-full sm:w-auto border-t border-white/5 sm:border-0 pt-3 sm:pt-0">
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             {internship.matchPercentage}% Match
                           </span>

@@ -35,9 +35,53 @@ function calculateMatchScore(opportunity, profile) {
     }
   });
 
+  // 3. Location/City Preference Match
+  if (profile.cityPreference) {
+    const cityPref = profile.cityPreference.toLowerCase();
+    const oppLocation = (opportunity.location || "").toLowerCase();
+    
+    if (oppLocation.includes(cityPref)) {
+      score += 15; // strong match for city preference!
+    } else if (cityPref === "remote" && (oppLocation.includes("remote") || oppLocation.includes("work from home"))) {
+      score += 15; // remote match
+    } else if (cityPref !== "remote" && oppLocation.includes("remote")) {
+      score += 5; // remote is acceptable fallback
+    } else {
+      score -= 5; // physical location mismatch
+    }
+  }
+
+  // 4. Experience Years Match
+  const expRequirementStr = (opportunity.experience || opportunity.aiExperience || "").toLowerCase();
+  const userExp = profile.experienceYears || 0;
+  
+  if (expRequirementStr) {
+    const numbers = expRequirementStr.match(/\d+/g);
+    if (numbers && numbers.length > 0) {
+      const minExpRequired = parseInt(numbers[0]);
+      if (userExp >= minExpRequired) {
+        score += 10;
+      } else {
+        score -= 15;
+      }
+    } else {
+      if (expRequirementStr.includes("fresher") || expRequirementStr.includes("entry") || expRequirementStr.includes("junior")) {
+        if (userExp <= 2) score += 10;
+      } else if (expRequirementStr.includes("mid") || expRequirementStr.includes("senior")) {
+        if (userExp >= 3) score += 10;
+        else score -= 15;
+      }
+    }
+  } else {
+    score += 5;
+  }
+
   // Calculate percentage
-  const maxPossibleScore = Math.max(10, userSkills.length * 10 + userInterests.length * 8);
-  const matchPercentage = Math.min(100, Math.round((score / maxPossibleScore) * 100));
+  let maxPossibleScore = Math.max(10, userSkills.length * 10 + userInterests.length * 8);
+  if (profile.cityPreference) maxPossibleScore += 15;
+  maxPossibleScore += 10; // exp weight
+  
+  const matchPercentage = Math.max(0, Math.min(100, Math.round((score / maxPossibleScore) * 100)));
 
   return { score, matchPercentage };
 }
