@@ -133,7 +133,7 @@ export function LayoutWrapper({ children }) {
           onProfileSaved={(p) => setProfile(p)}
         />
 
-        <main className="flex-grow pt-[104px] md:pt-[68px]">{children}</main>
+        <main className="flex-grow pt-[68px] pb-[64px] md:pb-0">{children}</main>
 
         <Footer />
       </div>

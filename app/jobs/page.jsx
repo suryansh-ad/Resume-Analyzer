@@ -261,7 +261,7 @@ function JobsPageContent() {
                   className="block p-6 rounded-2xl border border-white/5 bg-slate-900/10 hover:bg-slate-900/30 hover:border-cyan-500/20 transition group"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 min-w-0 flex-1">
                       {opp.company.logo ? (
                         <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                           <img src={opp.company.logo} alt={opp.company.name} className="max-h-full max-w-full object-contain" />
@@ -271,11 +271,11 @@ function JobsPageContent() {
                           <Building2 size={22} className="text-cyan-400" />
                         </div>
                       )}
-                      <div>
-                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                           {opp.title}
                         </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">{opp.company.name}</p>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate">{opp.company.name}</p>
                         
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3">
                           <span className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">

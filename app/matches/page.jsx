@@ -513,7 +513,7 @@ export default function MatchesPage() {
                     key={job.id} 
                     className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-900/10 hover:bg-slate-900/30 transition group"
                   >
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 min-w-0 flex-1">
                       {job.company?.logo ? (
                         <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                           <img src={job.company.logo} alt={job.company.name} className="max-h-full max-w-full object-contain" />
@@ -523,11 +523,11 @@ export default function MatchesPage() {
                           <Building2 size={22} className="text-cyan-400" />
                         </div>
                       )}
-                      <div>
-                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition truncate max-w-xs sm:max-w-md">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                           {job.title}
                         </h3>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">{job.company?.name || "Unknown Company"}</p>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">{job.company?.name || "Unknown Company"}</p>
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="flex items-center gap-1 text-[10px] text-slate-500">
                             <MapPin size={10} className="text-cyan-500" />
@@ -570,7 +570,7 @@ export default function MatchesPage() {
                     key={internship.id} 
                     className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-900/10 hover:bg-slate-900/30 transition group"
                   >
-                    <div className="flex gap-4">
+                    <div className="flex gap-4 min-w-0 flex-1">
                       {internship.company?.logo ? (
                         <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                           <img src={internship.company.logo} alt={internship.company.name} className="max-h-full max-w-full object-contain" />
@@ -580,11 +580,11 @@ export default function MatchesPage() {
                           <Building2 size={22} className="text-cyan-400" />
                         </div>
                       )}
-                      <div>
-                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition truncate max-w-xs sm:max-w-md">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                           {internship.title}
                         </h3>
-                        <p className="text-xs text-slate-400 font-medium mt-0.5">{internship.company?.name || "Unknown Company"}</p>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">{internship.company?.name || "Unknown Company"}</p>
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="flex items-center gap-1 text-[10px] text-slate-500">
                             <MapPin size={10} className="text-cyan-500" />

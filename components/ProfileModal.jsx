@@ -539,7 +539,7 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                         key={job.id} 
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-950/20 hover:bg-slate-950/40 transition group"
                       >
-                        <div className="flex gap-3 min-w-0">
+                        <div className="flex gap-3 min-w-0 flex-1">
                           {job.company.logo ? (
                             <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                               <img src={job.company.logo} alt={job.company.name} className="max-h-full max-w-full object-contain" />
@@ -549,11 +549,11 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                               <Building2 size={22} className="text-cyan-400" />
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition truncate">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                               {job.title}
                             </h4>
-                            <p className="text-xs text-slate-400 font-medium mt-0.5">{job.company.name}</p>
+                            <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">{job.company.name}</p>
                             <div className="flex items-center gap-3 mt-1.5">
                               <span className="flex items-center gap-1 text-[10px] text-slate-500">
                                 <MapPin size={10} className="text-cyan-500" />
@@ -596,7 +596,7 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                         key={internship.id} 
                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border border-white/5 bg-slate-950/20 hover:bg-slate-950/40 transition group"
                       >
-                        <div className="flex gap-3 min-w-0">
+                        <div className="flex gap-3 min-w-0 flex-1">
                           {internship.company.logo ? (
                             <div className="h-14 w-14 relative bg-white rounded-xl p-1.5 flex items-center justify-center shrink-0 border border-cyan-500/30 shadow-md shadow-cyan-500/10 transition group-hover:border-cyan-500/50">
                               <img src={internship.company.logo} alt={internship.company.name} className="max-h-full max-w-full object-contain" />
@@ -606,11 +606,11 @@ export function ProfileModal({ isOpen, onClose, user, onProfileSaved, currentPro
                               <Building2 size={22} className="text-cyan-400" />
                             </div>
                           )}
-                          <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition truncate">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                               {internship.title}
                             </h4>
-                            <p className="text-xs text-slate-400 font-medium mt-0.5">{internship.company.name}</p>
+                            <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">{internship.company.name}</p>
                             <div className="flex items-center gap-3 mt-1.5">
                               <span className="flex items-center gap-1 text-[10px] text-slate-500">
                                 <MapPin size={10} className="text-cyan-500" />

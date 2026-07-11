@@ -4,6 +4,8 @@ import { prisma } from "../lib/prisma.js";
 import { Search, MapPin, Briefcase, Award, TrendingUp, Calendar, ArrowUpRight, FileText, Building2 } from "lucide-react";
 import { CuratedMatchesPromo } from "../components/CuratedMatchesPromo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Fresherr.in - Discover Jobs, Internships & Hackathons in India",
   description: "India's best career platform for students and fresh graduates. Find entry-level software engineering jobs, internships, and hackathons in Bangalore, Pune, Gurgaon, Noida, and Hyderabad.",
@@ -166,11 +168,11 @@ export default async function HomePage() {
                       <Building2 size={22} className="text-cyan-400" />
                     </div>
                   )}
-                  <div className="flex-grow min-w-0">
-                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition truncate">
+                  <div className="flex-grow min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                       {job.title}
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium mt-0.5">{job.company.name}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">{job.company.name}</p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2.5">
                       <span className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                         <MapPin size={12} className="text-cyan-500" />
@@ -223,11 +225,11 @@ export default async function HomePage() {
                       <Building2 size={22} className="text-cyan-400" />
                     </div>
                   )}
-                  <div className="flex-grow min-w-0">
-                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition truncate">
+                  <div className="flex-grow min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-cyan-400 transition break-words line-clamp-2 leading-snug">
                       {internship.title}
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium mt-0.5">{internship.company.name}</p>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5 truncate">{internship.company.name}</p>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2.5">
                       <span className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                         <MapPin size={12} className="text-cyan-500" />
