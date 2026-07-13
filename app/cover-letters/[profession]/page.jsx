@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { Breadcrumbs } from "../../../components/Breadcrumbs";
 import { SeoCtaCard } from "../../../components/SeoCtaCard";
 import { niches } from "../../../lib/seo-data";
-import { createMetadata } from "../../../lib/seo";
+import { createMetadata, breadcrumbJsonLd } from "../../../lib/seo";
 
 export async function generateMetadata({ params }) {
   const { profession } = await params;
@@ -36,7 +37,11 @@ export default async function CoverLetterPage({ params }) {
   ];
 
   return (
-    <div className="flex flex-col text-slate-100 font-sans">
+    <>
+      <Script id="breadcrumb-json-ld" type="application/ld+json">
+        {JSON.stringify(breadcrumbJsonLd(breadcrumbItems))}
+      </Script>
+      <div className="flex flex-col text-slate-100 font-sans">
       <main className="mx-auto flex-1 w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <Breadcrumbs items={breadcrumbItems} />
 
@@ -73,5 +78,6 @@ export default async function CoverLetterPage({ params }) {
         </div>
       </main>
     </div>
+    </>
   );
 }

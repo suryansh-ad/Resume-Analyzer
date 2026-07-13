@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Sun, Moon } from "lucide-react";
 import { Navbar } from "./Navbar";
 import { Footer } from "./Footer";
 import { AuthPanel } from "./AuthPanel";
@@ -16,6 +17,10 @@ const AuthContext = createContext({
   setProfile: () => {},
   openProfileModal: () => {},
   closeProfileModal: () => {},
+  passwordRecovery: false,
+  setPasswordRecovery: () => {},
+  authError: "",
+  setAuthError: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -27,6 +32,7 @@ export function LayoutWrapper({ children }) {
   const [authError, setAuthError] = useState("");
   const [profile, setProfile] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [theme, setTheme] = useState("dark");
   const userRef = useRef(null);
 
   useEffect(() => {
@@ -60,6 +66,13 @@ export function LayoutWrapper({ children }) {
       setUser(currentUser);
       setAuthReady(true);
     });
+
+    // Check and set saved theme on mount
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(savedTheme);
 
     return () => {
       subscription.unsubscribe();
@@ -100,6 +113,15 @@ export function LayoutWrapper({ children }) {
     }
   };
 
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(newTheme);
+  };
+
   return (
     <AuthContext.Provider 
       value={{ 
@@ -109,21 +131,15 @@ export function LayoutWrapper({ children }) {
         profile, 
         setProfile, 
         openProfileModal: () => setIsProfileModalOpen(true),
-        closeProfileModal: () => setIsProfileModalOpen(false)
+        closeProfileModal: () => setIsProfileModalOpen(false),
+        passwordRecovery,
+        setPasswordRecovery,
+        authError,
+        setAuthError
       }}
     >
-      <div className="flex min-h-screen flex-col bg-slate-950 text-white font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+      <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-white font-sans selection:bg-cyan-500/30 selection:text-cyan-200 transition-colors duration-300">
         <Navbar user={user} authReady={authReady} onSignOut={handleSignOut} />
-
-        {authReady && (
-          <AuthPanel
-            user={user}
-            passwordRecovery={passwordRecovery}
-            authError={authError}
-            onPasswordRecoveryComplete={() => setPasswordRecovery(false)}
-            onSignOut={handleSignOut}
-          />
-        )}
 
         <ProfileModal 
           isOpen={isProfileModalOpen} 
@@ -133,7 +149,7 @@ export function LayoutWrapper({ children }) {
           onProfileSaved={(p) => setProfile(p)}
         />
 
-        <main className="flex-grow pt-[68px] pb-[64px] md:pb-0">{children}</main>
+        <main className="flex-grow pb-[64px] md:pb-0">{children}</main>
 
         <Footer />
       </div>

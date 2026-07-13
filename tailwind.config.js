@@ -6,6 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["var(--font-sora)", "ui-sans-serif", "system-ui"],
+        heading: ["var(--font-poppins)", "sans-serif"],
       },
       colors: {
         brand: {

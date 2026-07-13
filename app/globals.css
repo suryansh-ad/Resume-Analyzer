@@ -5,23 +5,206 @@
 @layer base {
   :root {
     color-scheme: dark;
+    --color-primary: 8 145 178;    /* #0891b2 - cyan-600 */
+    --color-secondary: 34 211 238;  /* #22d3ee - cyan-400 */
+    --color-cta: 16 185 129;       /* #10b981 - emerald-500 */
   }
 
   body {
-    @apply bg-slate-950 text-slate-50 transition-colors duration-300;
+    @apply bg-slate-950 text-slate-50 transition-all duration-300 antialiased selection:bg-cyan-500/30 selection:text-cyan-200;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   * {
-    @apply border-slate-800;
+    @apply border-slate-900/60;
+  }
+
+  /* Custom Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-950;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-900 rounded-full border border-slate-950 hover:bg-slate-800 transition-colors;
   }
 }
 
 @layer components {
+  /* Premium Glassmorphic card/panel */
   .glass-card {
-    @apply rounded-3xl border border-white/20 bg-white/70 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/60;
+    @apply rounded-2xl border border-white/10 bg-slate-900/30 shadow-glass backdrop-blur-md transition-all duration-300;
+  }
+
+  .glass-card-hover {
+    @apply hover:border-cyan-500/30 hover:bg-slate-900/50 hover:shadow-cyan-500/[0.02] hover:-translate-y-0.5;
+  }
+
+  .glass-input {
+    @apply bg-slate-950/80 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all duration-350;
   }
 
   .section-title {
-    @apply text-2xl font-semibold tracking-tight text-slate-900 dark:text-white md:text-3xl;
+    @apply text-xl sm:text-2xl font-bold tracking-tight font-heading text-white md:text-3xl;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent;
+  }
+
+  .cyan-gradient-text {
+    @apply bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent;
   }
 }
+
+/* ==========================================
+   Light Mode Theme Overrides
+   ========================================== */
+html.light {
+  color-scheme: light;
+}
+
+html.light body {
+  background-color: #f1f5f9 !important; /* Soft warm-slate background */
+  color: #1e293b !important; /* Soft slate-800 text */
+}
+
+/* Glass Card & Panel Overrides */
+html.light .glass-card,
+html.light .rounded-2xl.border-white\/\[0\.05\],
+html.light .rounded-2xl.border-white\/5,
+html.light .border-white\/\[0\.05\],
+html.light .border-white\/5,
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.08\],
+html.light .border-white\/10 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  box-shadow: 0 8px 30px rgba(148, 163, 184, 0.04) !important;
+}
+
+html.light .bg-slate-900\/10,
+html.light .bg-slate-900\/15,
+html.light .bg-slate-900\/20,
+html.light .bg-slate-900\/30,
+html.light .bg-slate-900\/40,
+html.light .bg-slate-900\/50,
+html.light .bg-slate-900\/60 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html.light .bg-slate-950 {
+  background-color: #f8fafc !important; /* Soft slate-50 instead of pure white */
+}
+
+html.light .bg-slate-950\/40,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/80 {
+  background-color: rgba(248, 250, 252, 0.85) !important;
+}
+
+/* Typography Overrides */
+html.light .text-slate-50,
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: #334155 !important; /* Soft slate-700 for body/secondary text */
+}
+
+html.light .text-slate-400 {
+  color: #475569 !important; /* slate-600 */
+}
+
+html.light .text-white {
+  color: #0f172a !important; /* High contrast headers only */
+}
+
+/* Exclude active/colored text accents */
+html.light .text-cyan-400,
+html.light .text-cyan-500,
+html.light .text-emerald-400,
+html.light .text-emerald-500,
+html.light .text-violet-400,
+html.light .text-violet-500,
+html.light .text-amber-400,
+html.light .text-amber-500,
+html.light .text-slate-950,
+html.light .text-slate-500,
+html.light .text-slate-600 {
+  color: unset !important;
+}
+
+html.light .bg-cyan-500,
+html.light .bg-cyan-500\/10,
+html.light .bg-emerald-500,
+html.light .bg-emerald-500\/10,
+html.light .bg-violet-500,
+html.light .bg-violet-500\/10,
+html.light .bg-slate-950,
+html.light .bg-slate-950\/40,
+html.light .bg-emerald-500\/5,
+html.light .bg-cyan-500\/5 {
+  color: unset !important;
+}
+
+/* Background spotlight adjustments */
+html.light .absolute.bg-cyan-500\/\[0\.03\],
+html.light .absolute.bg-cyan-500\/\[0\.02\],
+html.light .absolute.bg-indigo-500\/\[0\.02\],
+html.light .absolute.bg-cyan-500\/5,
+html.light .absolute.bg-indigo-500\/5 {
+  background-color: rgba(6, 182, 212, 0.015) !important;
+}
+
+/* Inputs & Forms */
+html.light input,
+html.light select,
+html.light textarea,
+html.light .glass-input {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  color: #0f172a !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Hover States for Cards */
+html.light .glass-card-hover:hover,
+html.light .hover\:bg-slate-900\/40:hover,
+html.light .hover\:bg-slate-900\/35:hover {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(6, 182, 212, 0.25) !important;
+}
+
+/* Sticky Nav Bar */
+html.light nav.sticky {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.02) !important;
+}
+
+/* Scrollbars */
+html.light ::-webkit-scrollbar-track {
+  background-color: #f8fafc !important;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1 !important;
+  border-color: #f8fafc !important;
+}
+
+/* Bottom mobile floating dock overrides */
+html.light .fixed.bottom-4 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.1) !important;
+}
+
+html.light .bg-\[radial-gradient\(ellipse_at_top\_\_var\(--tw-gradient-stops\)\)\] {
+  background-image: radial-gradient(ellipse at top, rgba(203, 213, 225, 0.1), #f8fafc) !important;
+}
+

@@ -1,4 +1,4 @@
-import { Sora } from "next/font/google";
+import { Sora, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { createMetadata, organizationJsonLd } from "../lib/seo";
@@ -8,6 +8,14 @@ const sora = Sora({
   subsets: ["latin"],
   variable: "--font-sora",
   display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  variable: "--font-poppins",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata = createMetadata();
@@ -15,7 +23,7 @@ export const metadata = createMetadata();
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${sora.variable} font-sans`}>
+      <body className={`${sora.variable} ${poppins.variable} font-sans`}>
         <Script id="organization-json-ld" type="application/ld+json">
           {JSON.stringify(organizationJsonLd())}
         </Script>
