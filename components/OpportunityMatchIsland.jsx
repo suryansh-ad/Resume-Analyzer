@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { UploadCloud, CheckCircle2, AlertCircle, RefreshCw, BarChart2, Star, PlusCircle, CheckCircle } from "lucide-react";
 import { api } from "../lib/api.js";
 import { useAuth } from "./LayoutWrapper.jsx";
@@ -95,12 +96,12 @@ export function OpportunityMatchIsland({ opportunityId }) {
               Please sign in to analyze your resume and get compatibility matches.
             </p>
           </div>
-          <a
-            href="#auth"
+          <Link
+            href="/auth"
             className="inline-flex items-center justify-center rounded-xl bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 text-xs font-bold px-4 py-2 cursor-pointer w-full shadow-md shadow-cyan-500/10"
           >
             Sign In to Unlock
-          </a>
+          </Link>
         </div>
       ) : (
         <>

@@ -118,6 +118,9 @@ export default async function HomePage() {
           </div>
         </div>
 
+        {/* Curated Matches Promo Section */}
+        <CuratedMatchesPromo />
+
         {/* Bento Grid Features Layout */}
         <section className="mb-24">
           <div className="mb-8 text-center max-w-xl mx-auto">
@@ -219,9 +222,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-
-        {/* Curated Matches Promo Section */}
-        <CuratedMatchesPromo />
 
         {/* Jobs & Internships Split */}
         <div className="grid lg:grid-cols-2 gap-8 mb-20">

@@ -98,7 +98,7 @@ export function ResetPasswordPage() {
           Update Password
         </button>
 
-        <Link href="/#auth" className="mt-5 inline-flex w-full justify-center text-sm text-cyan-200 transition hover:text-white">
+        <Link href="/auth" className="mt-5 inline-flex w-full justify-center text-sm text-cyan-200 transition hover:text-white">
           Back to sign in
         </Link>
       </form>

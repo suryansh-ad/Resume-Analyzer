@@ -14,12 +14,7 @@ export function CuratedMatchesPromo() {
     if (user) {
       router.push("/matches");
     } else {
-      const authSection = document.getElementById("auth");
-      if (authSection) {
-        authSection.scrollIntoView({ behavior: "smooth" });
-      } else {
-        window.location.hash = "auth";
-      }
+      router.push("/auth");
     }
   };
 

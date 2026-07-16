@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AuthPanel } from "./AuthPanel";
 import { Footer } from "./Footer";
@@ -626,12 +627,12 @@ export function FresherrApp() {
                 Analyze your resume against 29+ top tech companies, get real-time compatibility scores, skill gaps, and interview prep questions.
               </p>
             </div>
-            <a
-              href="#auth"
+            <Link
+              href="/auth"
               className="inline-flex items-center justify-center rounded-xl bg-cyan-500 hover:bg-cyan-400 transition text-slate-950 text-sm font-bold px-6 py-3 cursor-pointer w-full shadow-lg shadow-cyan-500/20 animate-bounce"
             >
               Sign In / Sign Up
-            </a>
+            </Link>
           </div>
         ) : (
           <UploadPanel

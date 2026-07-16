@@ -16,7 +16,7 @@ export function Navbar({ user, authReady = true, onSignOut }) {
     { name: "Home", path: "/", icon: Home },
     { name: "Jobs", path: "/jobs", icon: Briefcase },
     { name: "Internships", path: "/internships", icon: FileText },
-    { name: "Matches", path: "/matches", icon: Sparkles },
+    { name: "Hackathons", path: "/hackathons", icon: Award },
     { name: "Tools", path: "/tools", icon: Hammer },
   ];
 

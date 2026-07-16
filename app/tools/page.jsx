@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Script from "next/script";
-import { Hammer, FileText, CheckSquare, Award, HelpCircle, GraduationCap, ArrowRight } from "lucide-react";
+import { Hammer, FileText, CheckSquare, Award, HelpCircle, GraduationCap, ArrowRight, Sparkles } from "lucide-react";
 import { createMetadata, breadcrumbJsonLd } from "../../lib/seo";
 
 export const metadata = createMetadata({
@@ -16,6 +16,14 @@ export default function ToolsHubPage() {
       description: "Upload your resume in PDF/DOCX format to extract content, grade formatting, find key gaps, and get a realistic ATS compatibility score instantly.",
       path: "/tools/ats-resume-checker",
       icon: CheckSquare,
+      status: "Live & Free",
+      isLive: true
+    },
+    {
+      name: "Smart Opportunity Matching",
+      description: "Skip scanning endless generic listings. Upload your resume or specify your skills to instantly see relevant entry-level positions in tech matching your capabilities.",
+      path: "/matches",
+      icon: Sparkles,
       status: "Live & Free",
       isLive: true
     },
